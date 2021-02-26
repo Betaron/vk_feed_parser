@@ -5,8 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:vk_feed_parser"
         mc:Ignorable="d"
-        Title="AddUserDataWindow" Height="450" Width="800">
-    <Grid>
-        
+        Title="Preferences" Height="100" Width="400">
+    <Grid Background="LightGray">
+		<StackPanel VerticalAlignment="Center" >
+			<TextBlock Margin="10 0 10 5">
+				<Run Text="Enter the full path to the"/>
+				<Run Text="User Data" FontStyle="Italic"/>
+				<Run Text="of your web browser:"/>
+			</TextBlock>
+			<TextBox Margin="10 0 10 0"/>
+			<StackPanel Orientation="Horizontal">
+				<Button x:Name="applyUserData" Content="Apply" Width="70" Margin="10 10 10 0"/>
+			</StackPanel>
+		</StackPanel>
     </Grid>
 </Window>
