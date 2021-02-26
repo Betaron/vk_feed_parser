@@ -6,19 +6,27 @@
         xmlns:local="clr-namespace:vk_feed_parser"
         mc:Ignorable="d"
         Title="VkFeedParser 3000" Height="300" Width="600" MinHeight="200" MinWidth="400" Loaded="Window_Loaded">
+	<Window.Resources>
+		<Style x:Key="leftPanelBtn" TargetType="Button">
+			<Setter Property="FontSize" Value="16"/>
+			<Setter Property="Margin" Value="5"/>
+			<Setter Property="Width" Value="120"/>
+		</Style>
+	</Window.Resources>
 	<Grid Background="LightGray">
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="100"/>
+			<ColumnDefinition Width="150"/>
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
-		<Button x:Name="runChrome" 
-				Grid.Column="0" 
+		<StackPanel Grid.Column="0" Margin="0 6 0 0">
+			<Button x:Name="setUserData"
+					Content="Set user data"
+					Style="{StaticResource leftPanelBtn}"/>
+			<Button x:Name="runChrome"
 				Content="Run" 
-				FontSize="16"
-				VerticalAlignment="Top" 
-				HorizontalAlignment="Center" 
-				Margin="10" 
-				Width="70"/>
+				Style="{StaticResource leftPanelBtn}"/>
+		</StackPanel>
+		
 		<Border Grid.Column="1"  Margin="10"  BorderBrush="#404040" BorderThickness="3">
 			<Grid>
 				<Grid.RowDefinitions>
