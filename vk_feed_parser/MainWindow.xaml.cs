@@ -12,8 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
+using VkNet;
 
 namespace vk_feed_parser
 {

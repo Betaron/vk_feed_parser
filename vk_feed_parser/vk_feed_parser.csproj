@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
+    <PackageReference Include="VkNet" Version="1.60.0" />
   </ItemGroup>
 
 </Project>
