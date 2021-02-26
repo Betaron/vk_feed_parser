@@ -8,7 +8,7 @@ namespace vk_feed_parser
 {
 	class UIWorker
 	{
-		internal bool AddRecord(StackPanel panel, String text, Brush textColor)
+		static internal bool AddRecord(StackPanel panel, String text, Brush textColor)
 		{
 			var tBlock = new TextBlock();
 			tBlock.Foreground = textColor;
