@@ -26,5 +26,10 @@ namespace vk_feed_parser
 		{
 			InitializeComponent();
 		}
+
+		private void Window_Loaded(object sender, RoutedEventArgs e)
+		{
+			UIWorker.AddRecord(logStack, "Welcome to VkFeedParcer 3000", Brushes.Green);
+		}
 	}
 }

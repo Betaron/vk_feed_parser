@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:vk_feed_parser"
         mc:Ignorable="d"
-        Title="VkFeedParser 3000" Height="300" Width="600" MinHeight="200" MinWidth="400">
+        Title="VkFeedParser 3000" Height="300" Width="600" MinHeight="200" MinWidth="400" Loaded="Window_Loaded">
 	<Grid Background="LightGray">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="100"/>
