@@ -13,18 +13,21 @@
 			<Setter Property="Width" Value="120"/>
 		</Style>
 	</Window.Resources>
-	<Grid Background="LightGray">
+	<Grid x:Name="mainGrid" Background="LightGray">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="150"/>
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
 		<StackPanel Grid.Column="0" Margin="0 6 0 0">
-			<Button x:Name="setPreferences"
+			<Button x:Name="LoginBtn"
+					Content="Login"
+					Style="{StaticResource leftPanelBtn}"/>
+			<Button x:Name="setPreferencesBtn"
 					Content="Preferences"
 					Style="{StaticResource leftPanelBtn}"/>
-			<Button x:Name="runChrome"
-				Content="Run" 
-				Style="{StaticResource leftPanelBtn}"/>
+			<Button x:Name="runParseBtn"
+					Content="Run" 
+					Style="{StaticResource leftPanelBtn}"/>
 		</StackPanel>
 		<Border Grid.Column="1"  Margin="10"  BorderBrush="#404040" BorderThickness="3">
 			<Grid>
