@@ -12,6 +12,7 @@ namespace vk_feed_parser
 		{
 			var tBlock = new TextBlock();
 			tBlock.Foreground = textColor;
+			tBlock.FontFamily = new FontFamily("Consolas");
 			tBlock.Text = "> ";
 			try
 			{
