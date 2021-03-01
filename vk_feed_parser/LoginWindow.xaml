@@ -5,21 +5,29 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:vk_feed_parser"
         mc:Ignorable="d"
-        Title="LoginWindow" Height="450" Width="800">
-	<Grid Background="LightGray">
+        Title="Login" Height="300" Width="300" ResizeMode="NoResize">
+	<Window.Resources>
+		<Style x:Key="FieldNameStyle" TargetType="TextBlock">
+			<Setter Property="FontSize" Value="16" />
+			<Setter Property="Margin" Value="0 0 0 5" />
+		</Style>
+		<Style x:Key="StackPanelStyle" TargetType="StackPanel">
+			<Setter Property="Margin" Value="10 5 10 5" />
+		</Style>
+	</Window.Resources>
+    <Grid Background="LightGray">
 		<StackPanel>
-			<StackPanel>
-				<TextBlock/>
+			<TextBlock Text="Vkontakte" FontSize="24" HorizontalAlignment="Center" Margin="0 25 0 0"/>
+			<StackPanel Style="{StaticResource StackPanelStyle}">
+				<TextBlock Style="{StaticResource FieldNameStyle}" Text="Login:"/>
 				<TextBox/>
 			</StackPanel>
-			<StackPanel>
-				<TextBlock/>
-				<TextBox/>
+			<StackPanel Style="{StaticResource StackPanelStyle}">
+				<TextBlock Style="{StaticResource FieldNameStyle}" Text="Password:"/>
+				<PasswordBox/>
 			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<CheckBox/>
-				<TextBlock/>
-			</StackPanel>
+			<CheckBox Margin="10 5 10 5" Content="Stay online?"/>
+			<Button Content="Send" HorizontalAlignment="Left" Margin="10" Padding="15 2 15 2"/>
 		</StackPanel>
     </Grid>
 </Window>
