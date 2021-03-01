@@ -10,23 +10,38 @@
 		<Style x:Key="leftPanelBtn" TargetType="Button">
 			<Setter Property="FontSize" Value="16"/>
 			<Setter Property="Margin" Value="5"/>
-			<Setter Property="Width" Value="120"/>
+			<Setter Property="Cursor" Value="Hand"/>
 		</Style>
 	</Window.Resources>
 	<Grid x:Name="mainGrid" Background="LightGray">
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="150"/>
+			<ColumnDefinition Width="160"/>
 			<ColumnDefinition/>
 		</Grid.ColumnDefinitions>
-		<StackPanel Grid.Column="0" Margin="0 6 0 0">
-			<Button x:Name="LoginBtn"
+		<StackPanel Grid.Column="0" Margin="10 6 10 0">
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="0.75*"/>
+					<ColumnDefinition Width="0.25*"/>
+				</Grid.ColumnDefinitions>
+			<Button x:Name="loginBtn"
 					Content="Login"
+					Grid.Column="0"
 					Style="{StaticResource leftPanelBtn}"/>
+			<Button x:Name="logoutBtn"
+					Content=">"
+					Grid.Column="1"
+					IsEnabled="False"
+					ToolTip="Logout"
+					Style="{StaticResource leftPanelBtn}"/>
+			</Grid>
 			<Button x:Name="setPreferencesBtn"
 					Content="Preferences"
+					IsEnabled="False"
 					Style="{StaticResource leftPanelBtn}"/>
 			<Button x:Name="runParseBtn"
 					Content="Run" 
+					IsEnabled="False"
 					Style="{StaticResource leftPanelBtn}"/>
 		</StackPanel>
 		<Border Grid.Column="1"  Margin="10"  BorderBrush="#404040" BorderThickness="3">
