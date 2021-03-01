@@ -6,7 +6,20 @@
         xmlns:local="clr-namespace:vk_feed_parser"
         mc:Ignorable="d"
         Title="LoginWindow" Height="450" Width="800">
-    <Grid>
-        
+    <Grid Background="LightGreay">
+		<StackPanel>
+			<StackPanel>
+				<TextBlock/>
+				<TextBox/>
+			</StackPanel>
+			<StackPanel>
+				<TextBlock/>
+				<TextBox/>
+			</StackPanel>
+			<StackPanel Orientation="Horizontal">
+				<CheckBox/>
+				<TextBlock/>
+			</StackPanel>
+		</StackPanel>
     </Grid>
 </Window>
