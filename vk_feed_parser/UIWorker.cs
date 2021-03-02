@@ -3,11 +3,21 @@ using System.Collections.Generic;
 using System.Text;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace vk_feed_parser
 {
 	class UIWorker
 	{
+		Dispatcher mainDispatcher;
+		Parser mainParser;
+
+		public UIWorker(Dispatcher dispatcher, Parser parser)
+		{
+			mainDispatcher = dispatcher;
+			mainParser = parser;
+		}
+
 		static internal bool AddRecord(StackPanel panel, String text, Brush textColor)
 		{
 			var tBlock = new TextBlock();
