@@ -11,6 +11,6 @@ namespace vk_feed_parser
 {
 	public class Parser
 	{
-		private VkApi api = new VkApi();
+		public VkApi api = new VkApi();
 	}
 }
