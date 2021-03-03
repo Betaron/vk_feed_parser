@@ -9,7 +9,7 @@ using VkNet.Enums.Filters;
 using System.Threading;
 namespace vk_feed_parser
 {
-	class Parser
+	public class Parser
 	{
 		private VkApi api = new VkApi();
 	}

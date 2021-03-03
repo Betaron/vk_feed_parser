@@ -36,5 +36,10 @@ namespace vk_feed_parser
 			parser = new Parser();
 			UI = new UIWorker(mainGrid.Dispatcher, parser);
 		}
+
+		private void loginBtn_Click(object sender, RoutedEventArgs e)
+		{
+			UI.ShowLoginWindow();
+		}
 	}
 }

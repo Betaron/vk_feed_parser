@@ -27,7 +27,8 @@
 			<Button x:Name="loginBtn"
 					Content="Login"
 					Grid.Column="0"
-					Style="{StaticResource leftPanelBtn}"/>
+					Style="{StaticResource leftPanelBtn}" 
+					Click="loginBtn_Click"/>
 			<Button x:Name="logoutBtn"
 					Content=">"
 					Grid.Column="1"

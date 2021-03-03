@@ -17,9 +17,12 @@ namespace vk_feed_parser
 	/// </summary>
 	public partial class LoginWindow : Window
 	{
-		public LoginWindow()
+		Parser mainParser;
+
+		public LoginWindow(Parser parser)
 		{
 			InitializeComponent();
+			mainParser = parser;
 		}
 	}
 }

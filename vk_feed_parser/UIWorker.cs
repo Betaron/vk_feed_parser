@@ -35,5 +35,14 @@ namespace vk_feed_parser
 				return false;
 			}
 		}
+
+		internal void ShowLoginWindow()
+		{
+			mainDispatcher.Invoke(() =>
+			{
+				LoginWindow loginWindow = new LoginWindow(mainParser);
+				loginWindow.Show();
+			});
+		}
 	}
 }
