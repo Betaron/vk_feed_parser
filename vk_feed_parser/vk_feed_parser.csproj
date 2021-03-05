@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="cef.redist.x86" Version="88.2.9" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
     <PackageReference Include="VkNet" Version="1.60.0" />
   </ItemGroup>
