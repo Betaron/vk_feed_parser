@@ -1,5 +1,4 @@
-﻿
-using System.IO;
+﻿using System.IO;
 using Newtonsoft.Json;
 
 namespace vk_feed_parser

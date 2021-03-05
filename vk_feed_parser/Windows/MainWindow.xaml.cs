@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -35,11 +36,26 @@ namespace vk_feed_parser
 			UIWorker.AddRecord(logStack, "Welcome to VkFeedParcer 3000", Brushes.Green);
 			parser = new Parser();
 			UI = new UIWorker(mainGrid.Dispatcher, parser);
+			IsAuthorisedTrue();
 		}
 
 		private void loginBtn_Click(object sender, RoutedEventArgs e)
 		{
 			UI.ShowLoginWindow();
+		}
+
+		private void IsAuthorisedTrue()
+		{
+			Thread checkAuthThread = new Thread(() =>
+			{
+				while (!parser.api.IsAuthorized)
+				{
+				}
+				this.Dispatcher.Invoke(() =>
+				UIWorker.AddRecord(logStack, "Authorize - sucseed!", Brushes.Green)
+				);
+			});
+			checkAuthThread.Start();
 		}
 	}
 }

@@ -20,14 +20,25 @@
 			<TextBlock Text="Vkontakte" FontSize="24" HorizontalAlignment="Center" Margin="0 25 0 0"/>
 			<StackPanel Style="{StaticResource StackPanelStyle}">
 				<TextBlock Style="{StaticResource FieldNameStyle}" Text="Login:"/>
-				<TextBox/>
+				<TextBox x:Name="loginField"/>
 			</StackPanel>
 			<StackPanel Style="{StaticResource StackPanelStyle}">
 				<TextBlock Style="{StaticResource FieldNameStyle}" Text="Password:"/>
-				<PasswordBox/>
+				<PasswordBox x:Name="passwordField"/>
 			</StackPanel>
-			<CheckBox Margin="10 5 10 5" Content="Stay online?"/>
-			<Button Content="Send" HorizontalAlignment="Left" Margin="10" Padding="15 2 15 2"/>
+			<CheckBox x:Name="checkBox" Margin="10 5 10 5" Content="Stay online?"/>
+			<WrapPanel>
+				<Button x:Name="sendBtn" Content="Send" HorizontalAlignment="Left" Margin="10" Padding="15 2 15 2" Click="sendBtn_Click"/>
+				<Label x:Name="alertLabel" Content="Wrong login or password!" VerticalAlignment="Center" Foreground="DarkRed" Visibility="Hidden"/>
+			</WrapPanel>
 		</StackPanel>
-    </Grid>
+		<Grid x:Name="connctionScreen" Visibility ="Hidden" Opacity="0.4">
+			<Rectangle Fill="Black"/>
+			<TextBlock Text="Connecting..." 
+					   Foreground="White" 
+					   FontSize="32" 
+					   VerticalAlignment="Center" 
+					   HorizontalAlignment="Center"/>
+		</Grid>
+	</Grid>
 </Window>

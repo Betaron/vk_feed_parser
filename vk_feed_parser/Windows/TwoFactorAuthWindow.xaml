@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:vk_feed_parser"
         mc:Ignorable="d"
-        Title="Authorize Code" Height="110" Width="200">
+        Title="Authorize Code" Height="150" Width="200">
 	<Grid Background="LightGray">
 		<StackPanel VerticalAlignment="Center">
 			<StackPanel VerticalAlignment="Top">
