@@ -4,21 +4,9 @@ namespace vk_feed_parser
 {
 	public class Config
 	{
-		public ulong appId { get; private set; }
+		public ulong appId { get; set; }
 		public string token { get; set; }
 		public bool IsStayOnline { get; set; }
-
-		public Config()
-		{
-			SetDefaultConfig();
-		}
-
-		public void SetDefaultConfig()
-		{
-			appId = 0;
-			IsStayOnline = false;
-			token = string.Empty;
-		}
 
 		public void SetConfig(Config externalConfig)
 		{
@@ -40,8 +28,7 @@ namespace vk_feed_parser
 			}
 			catch
 			{
-				SetDefaultConfig();
-				WriteConfig(this);
+				WriteConfig(default);
 			}
 		}
 	}
