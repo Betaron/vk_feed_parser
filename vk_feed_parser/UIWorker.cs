@@ -40,7 +40,8 @@ namespace vk_feed_parser
 		{
 			mainDispatcher.Invoke(() =>
 			{
-				LoginWindow loginWindow = new LoginWindow(mainParser);
+				//LoginWindow loginWindow = new LoginWindow(mainParser);
+				var loginWindow = new Windows.BrowserLoginWindow();
 				loginWindow.Show();
 			});
 		}

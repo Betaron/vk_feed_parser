@@ -6,13 +6,13 @@
         xmlns:local="clr-namespace:vk_feed_parser.Windows"
 		xmlns:cefSharp="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
         mc:Ignorable="d"
-        Title="BrowserLoginWindow" Height="450" Width="800">
+        Title="BrowserLoginWindow" Height="600" Width="800">
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition/>
 			<RowDefinition Height="5"/>
 		</Grid.RowDefinitions>
-		<cefSharp:ChromiumWebBrowser x:Name="Browser" Grid.Row="0" Address="https://google.com"/>
+		<cefSharp:ChromiumWebBrowser x:Name="Browser" Grid.Row="0"/>
 		<ProgressBar Grid.Row="1" IsIndeterminate="{Binding ElementName=Browser, Path=IsLoading, IsAsync=True}"/>
 	</Grid>
 </Window>
