@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:vk_feed_parser.Windows"
 		xmlns:cefSharp="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
         mc:Ignorable="d"
-        Title="BrowserLoginWindow" Height="600" Width="800">
+        Title="Login" Height="600" Width="800" MinHeight="400" MinWidth="450">
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition/>
