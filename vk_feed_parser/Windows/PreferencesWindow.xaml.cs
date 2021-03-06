@@ -10,7 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace vk_feed_parser
+namespace vk_feed_parser.Windows
 {
 	/// <summary>
 	/// Interaction logic for PreferencesWindow.xaml

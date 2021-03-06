@@ -14,7 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using VkNet;
 
-namespace vk_feed_parser
+namespace vk_feed_parser.Windows
 {
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml
