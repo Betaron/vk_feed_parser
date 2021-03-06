@@ -16,7 +16,7 @@ namespace vk_feed_parser
 	{
 		public VkApi api;
 
-		public void ApiAuth()
+		public void LoginAuth(ulong appId)
 		{
 			api = new VkApi(InitDi());
 
@@ -27,8 +27,18 @@ namespace vk_feed_parser
 
 			api.Authorize(new ApiAuthParams
 			{
-				ApplicationId = 7773939,
+				ApplicationId = appId,
 				Settings = Settings.Wall | Settings.Offline
+			});
+		}
+
+		public void TokenAuthorize(string token)
+		{
+			api = new VkApi();
+
+			api.Authorize(new ApiAuthParams
+			{
+				AccessToken = token
 			});
 		}
 

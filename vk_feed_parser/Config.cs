@@ -15,21 +15,26 @@ namespace vk_feed_parser
 			token = externalConfig.token;
 		}
 
-		public void WriteConfig(Config externalConfig) =>
+		public static void WriteConfig(Config externalConfig) =>
 			FileWorker.SaveToJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "config.json"), externalConfig);
+
+		public static void CheckConfigFileValid()
+		{
+			string path = Path.Combine(Directory.GetCurrentDirectory(), "config.json");
+			try { Config externalConfig = FileWorker.LoadFromJsonFile<Config>(path); }
+			catch {	WriteConfig(new Config()); }
+		}
 
 		public void ReadConfig()
 		{
 			string path = Path.Combine(Directory.GetCurrentDirectory(), "config.json");
+
 			try
 			{
 				Config externalConfig = FileWorker.LoadFromJsonFile<Config>(path);
 				SetConfig(externalConfig);
 			}
-			catch
-			{
-				WriteConfig(default);
-			}
+			catch { WriteConfig(new Config()); }
 		}
 	}
 }

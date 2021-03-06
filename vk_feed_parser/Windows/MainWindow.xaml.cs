@@ -23,6 +23,7 @@ namespace vk_feed_parser.Windows
 	public partial class MainWindow : Window
 	{
 		private Parser parser = new Parser();
+		private Config config = new Config();
 		private UIWorker UI;
 
 		public MainWindow()
@@ -32,13 +33,29 @@ namespace vk_feed_parser.Windows
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
+			Config.CheckConfigFileValid();
 			UIWorker.AddRecord(logStack, "Welcome to VkFeedParcer 3000", Brushes.Green);
 			UI = new UIWorker(mainGrid.Dispatcher, parser);
 		}
 
 		private void loginBtn_Click(object sender, RoutedEventArgs e)
 		{
-			parser.ApiAuth();
+			config = GetConfig();
+			if (config.IsStayOnline)
+			{
+				parser.TokenAuthorize(config.token);
+			}
+			else
+			{
+				parser.LoginAuth(config.appId);
+				config = new Config()
+				{
+					appId = config.appId,
+					IsStayOnline = true,
+					token = parser.api.Token
+				};
+				Config.WriteConfig(config);
+			}
 			CheckAuthorise();
 		}
 
@@ -55,5 +72,11 @@ namespace vk_feed_parser.Windows
 			});
 			checkAuthThread.Start();
 		}
+
+		private Config GetConfig()
+		{
+			config.ReadConfig();
+			return config;
+		} 
 	}
 }
