@@ -39,10 +39,10 @@ namespace vk_feed_parser.Windows
 		private void loginBtn_Click(object sender, RoutedEventArgs e)
 		{
 			parser.ApiAuth();
-			IsAuthorisedTrue();
+			CheckAuthorise();
 		}
 
-		private void IsAuthorisedTrue()
+		private void CheckAuthorise()
 		{
 			Thread checkAuthThread = new Thread(() =>
 			{
