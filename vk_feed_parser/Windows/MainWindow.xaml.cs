@@ -43,17 +43,25 @@ namespace vk_feed_parser.Windows
 			config = GetConfig();
 			if (config.IsStayOnline)
 			{
-				parser.TokenAuthorize(config.token);
+				try { parser.TokenAuthorize(config.token); }
+				catch { Config.WriteConfig(new Config() { appId = config.appId }); }
 			}
 			else
 			{
-				parser.LoginAuth(config.appId);
-				config = new Config()
+				try
 				{
-					appId = config.appId,
-					IsStayOnline = true,
-					token = parser.api.Token
-				};
+					parser.LoginAuth(config.appId);
+					config = new Config()
+					{
+						appId = config.appId,
+						IsStayOnline = true,
+						token = parser.api.Token
+					};
+				}
+				catch
+				{
+					config = new Config() {appId = config.appId };
+				}
 				Config.WriteConfig(config);
 			}
 			CheckAuthorise();
@@ -66,9 +74,12 @@ namespace vk_feed_parser.Windows
 				while (!parser.api.IsAuthorized)
 				{
 				}
-				this.Dispatcher.Invoke(() =>
-				UIWorker.AddRecord(logStack, "Authorize - sucseed!", Brushes.Green)
-				);
+				this.Dispatcher.Invoke(() => {
+					UIWorker.AddRecord(logStack, "Authorize - sucseed!", Brushes.Green);
+					loginBtn.IsEnabled = false;
+					logoutBtn.IsEnabled = true;
+					setPreferencesBtn.IsEnabled = true;
+				});
 			});
 			checkAuthThread.Start();
 		}
@@ -77,6 +88,15 @@ namespace vk_feed_parser.Windows
 		{
 			config.ReadConfig();
 			return config;
-		} 
+		}
+
+		private void logoutBtn_Click(object sender, RoutedEventArgs e)
+		{
+			Config.WriteConfig(new Config() { appId = config.appId });
+			Application.Current.Shutdown();
+			string path = Application.ResourceAssembly.Location;
+			path = path.Remove(path.Length - 3, 3) + "exe";
+			System.Diagnostics.Process.Start(path);
+		}
 	}
 }

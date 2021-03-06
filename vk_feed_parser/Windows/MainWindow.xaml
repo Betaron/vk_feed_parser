@@ -33,8 +33,9 @@
 					Content=">"
 					Grid.Column="1"
 					IsEnabled="False"
-					ToolTip="Logout"
-					Style="{StaticResource leftPanelBtn}"/>
+					ToolTip="logoutBtn"
+					Style="{StaticResource leftPanelBtn}" 
+					Click="logoutBtn_Click"/>
 			</Grid>
 			<Button x:Name="setPreferencesBtn"
 					Content="Preferences"
