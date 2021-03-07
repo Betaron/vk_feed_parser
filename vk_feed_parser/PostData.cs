@@ -4,24 +4,28 @@ using System.Text;
 
 namespace vk_feed_parser
 {
-	class PostData
+	public class PostData
 	{
 		public struct TextData
 		{
-			public ulong? postID;
+			public string postID;
 			public string postText;
 		}
 		
 		public struct ImagesData
 		{
-			public ulong? postID;
-			public string[] postImages; 
+			public string postID;
+			public List<string> postImages; 
 		}
 
 		public struct LinksData
 		{
-			public ulong? postID;
-			public string[] postLinks;
+			public string postID;
+			public List<string> postLinks;
 		}
+
+		public TextData textData;
+		public ImagesData imagesData;
+		public LinksData linksData;
 	}
 }
