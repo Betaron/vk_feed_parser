@@ -7,6 +7,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using VkNet;
 using VkNet.Abstractions.Authorization;
+using VkNet.Model.RequestParams;
 using VkNet.Enums.Filters;
 using VkNet.Model;
 
@@ -15,6 +16,7 @@ namespace vk_feed_parser
 	public class Parser
 	{
 		public VkApi api;
+		private string nextFrom = string.Empty;
 
 		public void LoginAuth(ulong appId)
 		{
@@ -49,6 +51,20 @@ namespace vk_feed_parser
 			di.AddSingleton<IAuthorizationFlow, WpfAuthorize>();
 
 			return di;
+		}
+
+		public IEnumerable<NewsItem> GetPostsArr()
+		{
+			NewsFeed newsFeed = api.NewsFeed.Get(new NewsFeedGetParams() 
+			{ 
+				Filters = NewsTypes.Post,
+				Count = 10,
+				StartFrom = nextFrom
+			});
+
+			nextFrom = newsFeed.NextFrom;
+
+			return newsFeed.Items;
 		}
 	}
 }
