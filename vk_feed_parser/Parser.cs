@@ -10,6 +10,7 @@ using VkNet.Abstractions.Authorization;
 using VkNet.Model.RequestParams;
 using VkNet.Enums.Filters;
 using VkNet.Model;
+using VkNet.Model.Attachments;
 
 namespace vk_feed_parser
 {
@@ -80,6 +81,39 @@ namespace vk_feed_parser
 			{
 				return new List<TAttType>();
 			}
+		}
+
+
+		public PostData SeparatePost(NewsItem post)
+		{
+			string id = $"{post.SourceId}_{post.PostId}";
+			List<string> Images =
+				(from item in GetAttachments<Photo>(post)
+				 select item.Sizes.Last().Url.ToString()).ToList();
+
+			List<string> Links =
+				(from item in GetAttachments<Link>(post)
+				 select item.Uri.ToString()).ToList();
+
+			PostData postData = new PostData()
+			{
+				textData = {
+					postID = id,
+					postText = post.Text
+				},
+				imagesData =
+				{
+					postID = id,
+					postImages = Images
+				},
+				linksData =
+				{
+					postID = id,
+					postLinks = Links					
+				}
+			};
+
+			return postData;
 		}
 	}
 }
