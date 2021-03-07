@@ -28,7 +28,7 @@ namespace vk_feed_parser
 			api.Authorize(new ApiAuthParams
 			{
 				ApplicationId = appId,
-				Settings = Settings.Wall | Settings.Offline
+				Settings = Settings.Groups | Settings.Friends | Settings.Offline
 			});
 		}
 
