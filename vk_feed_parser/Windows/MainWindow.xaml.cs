@@ -79,6 +79,7 @@ namespace vk_feed_parser.Windows
 					loginBtn.IsEnabled = false;
 					logoutBtn.IsEnabled = true;
 					setPreferencesBtn.IsEnabled = true;
+					runParseBtn.IsEnabled = true;
 				});
 			});
 			checkAuthThread.Start();
@@ -97,6 +98,15 @@ namespace vk_feed_parser.Windows
 			string path = Application.ResourceAssembly.Location;
 			path = path.Remove(path.Length - 3, 3) + "exe";
 			System.Diagnostics.Process.Start(path);
+		}
+
+		private void runParseBtn_Click(object sender, RoutedEventArgs e)
+		{
+			if (parser.api.IsAuthorized)
+			{
+				Thread parsingThread = parser.GetParseThread(Dispatcher, logStack);
+				parsingThread.Start();
+			}
 		}
 	}
 }

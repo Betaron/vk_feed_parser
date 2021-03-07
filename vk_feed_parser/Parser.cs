@@ -11,6 +11,10 @@ using VkNet.Model.RequestParams;
 using VkNet.Enums.Filters;
 using VkNet.Model;
 using VkNet.Model.Attachments;
+using System.Threading;
+using System.Windows.Threading;
+using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace vk_feed_parser
 {
@@ -31,7 +35,7 @@ namespace vk_feed_parser
 			api.Authorize(new ApiAuthParams
 			{
 				ApplicationId = appId,
-				Settings = Settings.Groups | Settings.Friends | Settings.Offline
+				Settings = Settings.Wall | Settings.Groups | Settings.Friends | Settings.Offline
 			});
 		}
 
@@ -54,12 +58,12 @@ namespace vk_feed_parser
 			return di;
 		}
 
-		public IEnumerable<NewsItem> GetPostsArr()
+		public IEnumerable<NewsItem> GetPostsArr(ushort newsCount)
 		{
 			NewsFeed newsFeed = api.NewsFeed.Get(new NewsFeedGetParams() 
 			{ 
 				Filters = NewsTypes.Post,
-				Count = 10,
+				Count = newsCount,
 				StartFrom = nextFrom
 			});
 
@@ -114,6 +118,21 @@ namespace vk_feed_parser
 			};
 
 			return postData;
+		}
+
+		public Thread GetParseThread(Dispatcher dispatcher, StackPanel panel)
+		{
+			var thread = new Thread(() =>
+			{
+				var postsDataList = (from item in GetPostsArr(5)
+				 select SeparatePost(item)).ToList();
+				foreach (var i in postsDataList)
+				{
+					dispatcher.Invoke(()=> UIWorker.AddRecord(panel, i.ToString(), Brushes.Green));
+				}
+			});
+
+			return thread;
 		}
 	}
 }
