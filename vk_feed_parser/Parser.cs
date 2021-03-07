@@ -66,5 +66,20 @@ namespace vk_feed_parser
 
 			return newsFeed.Items;
 		}
+
+		//	https://github.com/vudeam - is owner of this method idea.
+		private List<TAttType> GetAttachments<TAttType>(NewsItem post) where TAttType : class
+		{
+			if (post != null)
+			{
+				return (from item in post.Attachments
+						where item.Type == typeof(TAttType)
+						select item.Instance as TAttType).ToList();
+			}
+			else
+			{
+				return new List<TAttType>();
+			}
+		}
 	}
 }
