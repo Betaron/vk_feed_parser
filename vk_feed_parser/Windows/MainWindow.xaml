@@ -44,7 +44,8 @@
 			<Button x:Name="runParseBtn"
 					Content="Run" 
 					IsEnabled="False"
-					Style="{StaticResource leftPanelBtn}"/>
+					Style="{StaticResource leftPanelBtn}"
+					Click="runParseBtn_Click"/>
 		</StackPanel>
 		<Border Grid.Column="1"  Margin="10"  BorderBrush="#404040" BorderThickness="3">
 			<Grid>
