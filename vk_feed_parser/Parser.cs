@@ -120,7 +120,7 @@ namespace vk_feed_parser
 			return postData;
 		}
 
-		public Thread GetParseThread(Dispatcher dispatcher, StackPanel panel)
+		public Thread GetParseThread()
 		{
 			var thread = new Thread(() =>
 			{
@@ -128,7 +128,7 @@ namespace vk_feed_parser
 				 select SeparatePost(item)).ToList();
 				foreach (var i in postsDataList)
 				{
-					dispatcher.Invoke(()=> UIWorker.AddRecord(panel, i.ToString(), Brushes.Green));
+					UIWorker.AddRecord(i.ToString());
 				}
 			});
 
