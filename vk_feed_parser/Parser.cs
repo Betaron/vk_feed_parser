@@ -75,7 +75,7 @@ namespace vk_feed_parser
 		//	https://github.com/vudeam - is owner of this method idea.
 		private List<TAttType> GetAttachments<TAttType>(NewsItem post) where TAttType : class
 		{
-			if (post != null)
+			if (post.Attachments != null)
 			{
 				return (from item in post.Attachments
 						where item.Type == typeof(TAttType)
@@ -91,13 +91,8 @@ namespace vk_feed_parser
 		public PostData SeparatePost(NewsItem post)
 		{
 			string id = $"{post.SourceId}_{post.PostId}";
-			List<string> Images =
-				(from item in GetAttachments<Photo>(post)
-				 select item.Sizes.Last().Url.ToString()).ToList();
-
-			List<string> Links =
-				(from item in GetAttachments<Link>(post)
-				 select item.Uri.ToString()).ToList();
+			List<string> Images = GetAttachments<Photo>(post).ConvertAll(i => i.Sizes.Last().Url.ToString());
+			List<string> Links = GetAttachments<Link>(post).ConvertAll(i => i.Uri.ToString());
 
 			PostData postData = new PostData()
 			{
