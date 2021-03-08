@@ -34,8 +34,9 @@ namespace vk_feed_parser.Windows
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			Config.CheckConfigFileValid();
-			UIWorker.AddRecord(logStack, "Welcome to VkFeedParcer 3000", Brushes.Green);
-			UI = new UIWorker(mainGrid.Dispatcher, parser);
+			UIWorker.SetWriterParams(Dispatcher, logStack);
+			UIWorker.AddRecord("Welcome to VkFeedParcer 3000");
+			UI = new UIWorker(parser);
 		}
 
 		private void loginBtn_Click(object sender, RoutedEventArgs e)
@@ -75,10 +76,11 @@ namespace vk_feed_parser.Windows
 				{
 				}
 				this.Dispatcher.Invoke(() => {
-					UIWorker.AddRecord(logStack, "Authorize - sucseed!", Brushes.Green);
+					UIWorker.AddRecord("Authorize - sucseed!");
 					loginBtn.IsEnabled = false;
 					logoutBtn.IsEnabled = true;
 					setPreferencesBtn.IsEnabled = true;
+					runParseBtn.IsEnabled = true;
 				});
 			});
 			checkAuthThread.Start();
@@ -97,6 +99,15 @@ namespace vk_feed_parser.Windows
 			string path = Application.ResourceAssembly.Location;
 			path = path.Remove(path.Length - 3, 3) + "exe";
 			System.Diagnostics.Process.Start(path);
+		}
+
+		private void runParseBtn_Click(object sender, RoutedEventArgs e)
+		{
+			if (parser.api.IsAuthorized)
+			{
+				Thread parsingThread = parser.GetParseThread();
+				parsingThread.Start();
+			}
 		}
 	}
 }

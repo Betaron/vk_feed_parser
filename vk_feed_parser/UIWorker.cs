@@ -9,31 +9,38 @@ namespace vk_feed_parser
 {
 	class UIWorker
 	{
-		Dispatcher mainDispatcher;
 		Parser mainParser;
 
-		public UIWorker(Dispatcher dispatcher, Parser parser)
+		public static Dispatcher mainDispatcher;
+		public static StackPanel mainPanel;
+
+		public UIWorker(Parser parser)
 		{
-			mainDispatcher = dispatcher;
 			mainParser = parser;
 		}
 
-		static internal bool AddRecord(StackPanel panel, String text, Brush textColor)
+		public static void SetWriterParams(Dispatcher disp, StackPanel panel)
 		{
-			var tBlock = new TextBlock();
-			tBlock.Foreground = textColor;
-			tBlock.FontFamily = new FontFamily("Consolas");
-			tBlock.Text = "> ";
+			mainDispatcher = disp;
+			mainPanel = panel;
+		}
+
+		static public void AddRecord(String text)
+		{
+			mainDispatcher.Invoke(() => {
+			var tBlock = new TextBlock
+			{
+				Foreground = Brushes.Green,
+				FontFamily = new FontFamily("Consolas"),
+				Text = "> "
+			};
 			try
 			{
 				tBlock.Text += text;
-				panel.Children.Add(tBlock);
-				return true;
+				mainPanel.Children.Add(tBlock);
 			}
-			catch
-			{
-				return false;
-			}
+			catch { }
+		});
 		}
 
 		internal void ShowLoginWindow()
