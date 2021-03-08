@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -28,12 +29,15 @@ namespace vk_feed_parser
 		static public void AddRecord(String text)
 		{
 			mainDispatcher.Invoke(() => {
-			var tBlock = new TextBlock
-			{
-				Foreground = Brushes.Green,
-				FontFamily = new FontFamily("Consolas"),
-				Text = "> "
-			};
+				var tBlock = new TextBox
+				{
+					IsReadOnly = true,
+					Foreground = Brushes.Green,
+					Background = Brushes.Transparent,
+					BorderBrush = Brushes.Transparent,
+					FontFamily = new FontFamily("Consolas"),
+					Text = "> "
+				};
 			try
 			{
 				tBlock.Text += text;

@@ -44,8 +44,8 @@ namespace vk_feed_parser
 
 			return $"\"Id\": {textData.postID}\n" +
 				$"\"Text\": {textData.postText}\n" +
-				$"\"Images\": {imgs}\n" +
-				$"\"Links\": {links}\n";
+				$"\"Links\": {links}\n" +
+				$"\"Images\": {imgs}\n";
 		}
 	}
 }
