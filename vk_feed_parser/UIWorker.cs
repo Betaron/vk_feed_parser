@@ -4,6 +4,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace vk_feed_parser
@@ -38,6 +39,11 @@ namespace vk_feed_parser
 			}
 			catch { }
 		});
+		}
+
+		public static void SetLineState(Rectangle line, bool state)
+		{
+			mainDispatcher.Invoke(()=> line.Fill = state?Brushes.LightGreen:Brushes.Green);
 		}
 	}
 }
