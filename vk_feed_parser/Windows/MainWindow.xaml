@@ -72,7 +72,7 @@
 				</ScrollViewer>
 			</Grid>
 		</Border>
-		<!--Awfull Hardcode! Prease, don't look at this s**t T~T-->
+		<!--Awfull Hardcode! Please, don't look at this s**t T~T-->
 		<Grid Grid.Column="2" Margin="20" VerticalAlignment="top" Height="300">
 			<StackPanel Orientation="Horizontal">
 				<StackPanel Width="215">
@@ -86,13 +86,13 @@
 						<Grid>
 							<Rectangle x:Name="t0_to_t1" Height="30" Width="60" Fill="Green" VerticalAlignment="Top" Margin="1"/>
 							<Rectangle  Height="25" Width="55" Fill="{StaticResource BackgroundColor}"
-									   HorizontalAlignment="Left" VerticalAlignment="Top"/>
+									   HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
 						</Grid>
 						<Rectangle x:Name="t0_to_t2" Height="30" Width="6" Fill="Green" VerticalAlignment="Center" Margin="6 0 6 0"/>
 						<Grid>
 							<Rectangle x:Name="t0_to_t3" Height="30" Width="60" Fill="Green" VerticalAlignment="Top" Margin="1"/>
 							<Rectangle Height="25" Width="55" Fill="{StaticResource BackgroundColor}"
-									   HorizontalAlignment="Right" VerticalAlignment="Top"/>
+									   HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
 						</Grid>
 					</StackPanel>
 					<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom">
