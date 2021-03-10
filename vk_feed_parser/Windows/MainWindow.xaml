@@ -73,7 +73,7 @@
 			</Grid>
 		</Border>
 		<!--Awfull Hardcode! Please, don't look at this s**t T~T-->
-		<Grid Grid.Column="2" Margin="20" VerticalAlignment="top" Height="300">
+		<Grid Grid.Column="2" Margin="20" VerticalAlignment="top" Height="240">
 			<StackPanel Orientation="Horizontal">
 				<StackPanel Width="215">
 					<Border Style="{StaticResource MaskBorder}">
@@ -151,7 +151,10 @@
 						</StackPanel>
 					</Grid>
 				</StackPanel>
-				<Border Style="{StaticResource MaskBorder}" Height="51" Margin="0 84 0 0">
+				<StackPanel VerticalAlignment="Top" Margin="0 143 0 0">
+					<Rectangle Height="2" Width="30" Fill="Gray"/>
+					<Rectangle x:Name="t0_to_t4" Height="20" Width="6" Fill="Green"/>
+					<Border Style="{StaticResource MaskBorder}" Height="51">
 					<Grid>
 						<Rectangle Fill="{StaticResource BackgroundColor}"/>
 						<TextBlock FontSize="24" HorizontalAlignment="Center">
@@ -159,6 +162,7 @@
 						</TextBlock>
 					</Grid>
 				</Border>
+				</StackPanel>
 			</StackPanel>
 		</Grid>
 	</Grid>
