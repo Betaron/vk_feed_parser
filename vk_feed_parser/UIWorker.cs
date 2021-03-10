@@ -8,17 +8,10 @@ using System.Windows.Threading;
 
 namespace vk_feed_parser
 {
-	class UIWorker
+	public static class UIWorker
 	{
-		Parser mainParser;
-
 		public static Dispatcher mainDispatcher;
 		public static StackPanel mainPanel;
-
-		public UIWorker(Parser parser)
-		{
-			mainParser = parser;
-		}
 
 		public static void SetWriterParams(Dispatcher disp, StackPanel panel)
 		{
@@ -26,7 +19,7 @@ namespace vk_feed_parser
 			mainPanel = panel;
 		}
 
-		static public void AddRecord(String text)
+		public static void AddRecord(String text)
 		{
 			mainDispatcher.Invoke(() => {
 				var tBlock = new TextBox
@@ -45,16 +38,6 @@ namespace vk_feed_parser
 			}
 			catch { }
 		});
-		}
-
-		internal void ShowLoginWindow()
-		{
-			mainDispatcher.Invoke(() =>
-			{
-				//LoginWindow loginWindow = new LoginWindow(mainParser);
-				var loginWindow = new Windows.BrowserLoginWindow();
-				loginWindow.Show();
-			});
 		}
 	}
 }

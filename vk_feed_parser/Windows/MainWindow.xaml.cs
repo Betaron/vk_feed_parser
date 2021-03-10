@@ -24,7 +24,6 @@ namespace vk_feed_parser.Windows
 	{
 		private Parser parser = new Parser();
 		private Config config = new Config();
-		private UIWorker UI;
 
 		public MainWindow()
 		{
@@ -36,7 +35,6 @@ namespace vk_feed_parser.Windows
 			Config.CheckConfigFileValid();
 			UIWorker.SetWriterParams(Dispatcher, logStack);
 			UIWorker.AddRecord("Welcome to VkFeedParcer 3000");
-			UI = new UIWorker(parser);
 		}
 
 		private void loginBtn_Click(object sender, RoutedEventArgs e)
