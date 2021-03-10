@@ -5,18 +5,25 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:vk_feed_parser"
         mc:Ignorable="d"
-        Title="VkFeedParser 3000" Height="300" Width="600" MinHeight="200" MinWidth="400" Loaded="Window_Loaded">
+        Title="VkFeedParser 3000" Height="300" Width="900" MinHeight="300" MinWidth="750" Loaded="Window_Loaded">
 	<Window.Resources>
 		<Style x:Key="leftPanelBtn" TargetType="Button">
 			<Setter Property="FontSize" Value="16"/>
 			<Setter Property="Margin" Value="5"/>
 			<Setter Property="Cursor" Value="Hand"/>
 		</Style>
+		<SolidColorBrush x:Key="BackgroundColor" Color="LightGray"/>
+		<Style x:Key="MaskBorder" TargetType="Border">
+			<Setter Property="BorderBrush" Value="White"/>
+			<Setter Property="BorderThickness" Value="10"/>
+			<Setter Property="HorizontalAlignment" Value="Center"/>
+		</Style>
 	</Window.Resources>
-	<Grid x:Name="mainGrid" Background="LightGray">
+	<Grid x:Name="mainGrid" Background="{StaticResource BackgroundColor}">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="160"/>
 			<ColumnDefinition/>
+			<ColumnDefinition Width="300"/>
 		</Grid.ColumnDefinitions>
 		<StackPanel Grid.Column="0" Margin="10 6 10 0">
 			<Grid>
@@ -24,12 +31,12 @@
 					<ColumnDefinition Width="0.75*"/>
 					<ColumnDefinition Width="0.25*"/>
 				</Grid.ColumnDefinitions>
-			<Button x:Name="loginBtn"
+				<Button x:Name="loginBtn"
 					Content="Login"
 					Grid.Column="0"
 					Style="{StaticResource leftPanelBtn}" 
 					Click="loginBtn_Click"/>
-			<Button x:Name="logoutBtn"
+				<Button x:Name="logoutBtn"
 					Content=">"
 					Grid.Column="1"
 					IsEnabled="False"
@@ -65,5 +72,94 @@
 				</ScrollViewer>
 			</Grid>
 		</Border>
+		<!--Awfull Hardcode! Prease, don't look at this s**t T~T-->
+		<Grid Grid.Column="2" Margin="20" VerticalAlignment="top" Height="300">
+			<StackPanel Orientation="Horizontal">
+				<StackPanel Width="215">
+					<Border Style="{StaticResource MaskBorder}">
+						<TextBlock FontSize="24" HorizontalAlignment="Center">
+							<Run Text="T"/><Run Text="0" Typography.Variants="Subscript"/>
+						</TextBlock>
+					</Border>
+					<StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+								VerticalAlignment="Top">
+						<Grid>
+							<Rectangle x:Name="t0_to_t1" Height="30" Width="60" Fill="Green" VerticalAlignment="Top" Margin="1"/>
+							<Rectangle  Height="25" Width="55" Fill="{StaticResource BackgroundColor}"
+									   HorizontalAlignment="Left" VerticalAlignment="Top"/>
+						</Grid>
+						<Rectangle x:Name="t0_to_t2" Height="30" Width="6" Fill="Green" VerticalAlignment="Center" Margin="6 0 6 0"/>
+						<Grid>
+							<Rectangle x:Name="t0_to_t3" Height="30" Width="60" Fill="Green" VerticalAlignment="Top" Margin="1"/>
+							<Rectangle Height="25" Width="55" Fill="{StaticResource BackgroundColor}"
+									   HorizontalAlignment="Right" VerticalAlignment="Top"/>
+						</Grid>
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+						<Border Style="{StaticResource MaskBorder}">
+							<TextBlock FontSize="24" HorizontalAlignment="Center">
+								<Run Text="T"/><Run Text="1" Typography.Variants="Subscript"/>
+							</TextBlock>
+						</Border>
+						<Border Style="{StaticResource MaskBorder}" Margin="30 0 30 0">
+							<TextBlock FontSize="24" HorizontalAlignment="Center">
+								<Run Text="T"/><Run Text="2" Typography.Variants="Subscript"/>
+							</TextBlock>
+						</Border>
+						<Border Style="{StaticResource MaskBorder}">
+							<TextBlock FontSize="24" HorizontalAlignment="Center">
+								<Run Text="T"/><Run Text="3" Typography.Variants="Subscript"/>
+							</TextBlock>
+						</Border>
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+						<Rectangle x:Name="t1_to_f1" Height="30" Width="6" Fill="Green" VerticalAlignment="Center"/>
+						<Rectangle x:Name="t2_to_f2" Height="30" Width="6" Fill="Green" VerticalAlignment="Center" Margin="64 0 64 0"/>
+						<Rectangle x:Name="t3_to_f3" Height="30" Width="6" Fill="Green" VerticalAlignment="Center"/>
+					</StackPanel>
+					<Grid>
+						<StackPanel VerticalAlignment="Center">
+							<Rectangle x:Name="t4_to_f1" Height="6" Width="50" Fill="Green" HorizontalAlignment="Right"/>
+							<Rectangle x:Name="t4_to_f2" Height="6" Width="120" Fill="Green" HorizontalAlignment="Right" Margin="0 4 0 4"/>
+							<Rectangle x:Name="t4_to_f3" Height="6" Width="180" Fill="Green" HorizontalAlignment="Right"/>
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+							<Border Style="{StaticResource MaskBorder}">
+								<Grid>
+									<Rectangle Fill="{StaticResource BackgroundColor}"/>
+									<TextBlock FontSize="24" HorizontalAlignment="Center">
+										<Run Text="F"/><Run Text="1" Typography.Variants="Subscript"/>
+									</TextBlock>
+								</Grid>
+							</Border>
+							<Border Style="{StaticResource MaskBorder}" Margin="30 0 30 0">
+								<Grid>
+									<Rectangle Fill="{StaticResource BackgroundColor}"/>
+									<TextBlock FontSize="24" HorizontalAlignment="Center">
+										<Run Text="F"/><Run Text="2" Typography.Variants="Subscript"/>
+									</TextBlock>
+								</Grid>
+							</Border>
+							<Border Style="{StaticResource MaskBorder}">
+								<Grid>
+									<Rectangle Fill="{StaticResource BackgroundColor}"/>
+									<TextBlock FontSize="24" HorizontalAlignment="Center">
+										<Run Text="F"/><Run Text="3" Typography.Variants="Subscript"/>
+									</TextBlock>
+								</Grid>
+							</Border>
+						</StackPanel>
+					</Grid>
+				</StackPanel>
+				<Border Style="{StaticResource MaskBorder}" Height="51" Margin="0 84 0 0">
+					<Grid>
+						<Rectangle Fill="{StaticResource BackgroundColor}"/>
+						<TextBlock FontSize="24" HorizontalAlignment="Center">
+							<Run Text="T"/><Run Text="4" Typography.Variants="Subscript"/>
+						</TextBlock>
+					</Grid>
+				</Border>
+			</StackPanel>
+		</Grid>
 	</Grid>
 </Window>
