@@ -15,5 +15,15 @@ namespace vk_feed_parser
 		{
 			return JsonConvert.DeserializeObject<TItem>(File.ReadAllText(path), settings);
 		}
+
+		public static void CreateEmptyFilesForSavingData()
+		{
+			if (!File.Exists("TestData.json"))
+				File.Create("TestData.json");
+			if (!File.Exists("LinksData.json"))
+				File.Create("LinksData.json");
+			if (!File.Exists("ImagesData.json"))
+				File.Create("ImagesData.json");
+		}
 	}
 }
