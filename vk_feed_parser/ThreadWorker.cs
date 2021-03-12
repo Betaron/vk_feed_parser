@@ -101,5 +101,35 @@ namespace vk_feed_parser
 			bufList.AddRange(dataStorages[index] as List<TData>);
 			FileWorker.SaveToJsonFile(paths[index], bufList);
 		}
+
+		public void StartNewsSaving()
+		{
+			var packingThreads = new Thread[]
+			{
+				GetPackingThread(
+					threadsLokers[0], 
+					paths[0], 
+					PostData.SeparateText,
+					dataStorages[0] as List<PostData.TextData>),
+				GetPackingThread(
+					threadsLokers[1],
+					paths[1],
+					PostData.SeparateLinks,
+					dataStorages[1] as List<PostData.LinksData>),
+				GetPackingThread(
+					threadsLokers[2],
+					paths[2],
+					PostData.SeparateImages,
+					dataStorages[2] as List<PostData.ImagesData>)
+			};
+			var savingThread = GetSavingThread();
+
+			foreach (var item in packingThreads)
+			{
+				item.Start();
+			}
+
+			savingThread.Start();
+		}
 	}
 }
