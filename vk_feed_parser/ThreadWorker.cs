@@ -12,6 +12,15 @@ namespace vk_feed_parser
 		Queue<NewsItem> posts;
 		static object getQueueLocker = new object();
 
+		// fields to pass to the method
+		const uint numOfThreads = 3;
+		object[] threadsLokers = new object[numOfThreads];
+		string[] paths = new string[numOfThreads];
+		List<PostData.TextData> textDataList;
+		List<PostData.LinksData> linksDataList;
+		List<PostData.ImagesData> imagesDataList;
+
+
 		public ThreadWorker(IEnumerable<NewsItem> posts)
 		{
 			this.posts = new Queue<NewsItem>(posts);
@@ -43,6 +52,13 @@ namespace vk_feed_parser
 						dataList.AddRange(bufData.Except(externalData));
 					}
 				}
+			});
+		}
+
+		public Thread GetSavingThread()
+		{
+			return new Thread(() =>
+			{
 			});
 		}
 	}
