@@ -75,5 +75,32 @@ namespace vk_feed_parser
 			};
 			return postData;
 		}
+
+		public static PostData.TextData SeparateText(NewsItem post)
+		{
+			return new PostData.TextData()
+			{
+				postID = $"{post.SourceId}_{post.PostId}",
+				postText = post.Text
+			};
+		}
+
+		public static PostData.LinksData SeparateLinks(NewsItem post)
+		{
+			return new PostData.LinksData()
+			{
+				postID = $"{post.SourceId}_{post.PostId}",
+				postLinks = Parser.GetAttachments<Link>(post).ConvertAll(i => i.Uri.ToString())
+			};
+		}
+
+		public static PostData.ImagesData SeparateImages(NewsItem post)
+		{
+			return new PostData.ImagesData()
+			{
+				postID = $"{post.SourceId}_{post.PostId}",
+				postImages = Parser.GetAttachments<Photo>(post).ConvertAll(i => i.Sizes[^1].Url.ToString())
+			};
+		}
 	}
 }
