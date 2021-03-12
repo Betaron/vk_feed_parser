@@ -10,6 +10,7 @@ namespace vk_feed_parser
 {
 	public class ThreadWorker
 	{
+		bool STOP = false;
 		Queue<NewsItem> posts;
 		static object getQueueLocker = new object();
 
@@ -49,7 +50,7 @@ namespace vk_feed_parser
 				{
 					localPosts = posts;
 				}
-				while (localPosts.Count != 0)
+				while (localPosts.Count != 0 && !STOP)
 				{
 					lock (locker)
 					{
@@ -66,9 +67,9 @@ namespace vk_feed_parser
 		{
 			return new Thread(() =>
 			{
-				while (true)
+				int targetIndex = GetIndexOfMostFilledStorage();
+				while (!STOP)
 				{
-					int targetIndex = GetIndexOfMostFilledStorage();
 					lock (threadsLokers[targetIndex])
 					{
 						switch (targetIndex)
@@ -91,7 +92,20 @@ namespace vk_feed_parser
 
 		private int GetIndexOfMostFilledStorage()
 		{
-			int maxIndex = 0;
+			int maxIndex = -1;
+			foreach (var item in dataStorages)
+			{
+				if ((item as IList).Count != 0)
+				{
+					maxIndex = 0;
+					break;
+				}
+			}
+			if (maxIndex != 0)
+			{
+				StopNewsSaving();
+				return maxIndex;
+			}
 			for (int i = 1; i < dataStorages.Count; i++)
 			{
 				if ((dataStorages[i] as IList).Count > (dataStorages[i-1] as IList).Count)
@@ -137,5 +151,7 @@ namespace vk_feed_parser
 
 			savingThread.Start();
 		}
+
+		public void StopNewsSaving() => STOP = true;
 	}
 }
