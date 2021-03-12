@@ -21,7 +21,12 @@ namespace vk_feed_parser
 			new List<PostData.ImagesData>()
 		};
 		object[] threadsLokers = new object[dataStorages.Count];
-		string[] paths = new string[dataStorages.Count];
+		string[] paths = new string[]
+		{
+			"TextData.json",
+			"LinksData.json",
+			"ImagesData.json"
+		};
 
 		public ThreadWorker(IEnumerable<NewsItem> posts)
 		{
@@ -104,6 +109,7 @@ namespace vk_feed_parser
 
 		public void StartNewsSaving()
 		{
+			FileWorker.CreateEmptyFilesForSavingData();
 			var packingThreads = new Thread[]
 			{
 				GetPackingThread(
