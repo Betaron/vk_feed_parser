@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using VkNet.Model;
 using System.Linq;
+using System.Collections;
 
 namespace vk_feed_parser
 {
@@ -13,20 +14,21 @@ namespace vk_feed_parser
 		static object getQueueLocker = new object();
 
 		// fields to pass to the method
-		const uint numOfThreads = 3;
-		object[] threadsLokers = new object[numOfThreads];
-		string[] paths = new string[numOfThreads];
-		List<PostData.TextData> textDataList;
-		List<PostData.LinksData> linksDataList;
-		List<PostData.ImagesData> imagesDataList;
-
+		static ArrayList dataStorages = new ArrayList()
+		{
+			new List<PostData.TextData>(),
+			new List<PostData.LinksData>(),
+			new List<PostData.ImagesData>()
+		};
+		object[] threadsLokers = new object[dataStorages.Count];
+		string[] paths = new string[dataStorages.Count];
 
 		public ThreadWorker(IEnumerable<NewsItem> posts)
 		{
 			this.posts = new Queue<NewsItem>(posts);
 		}
 
-		public Thread GetPackingThread<TData>(
+		private Thread GetPackingThread<TData>(
 			object locker, 
 			string path, 
 			Func<NewsItem, TData> SeparateData, 
@@ -55,11 +57,49 @@ namespace vk_feed_parser
 			});
 		}
 
-		public Thread GetSavingThread()
+		private Thread GetSavingThread()
 		{
 			return new Thread(() =>
 			{
+				while (true)
+				{
+					int targetIndex = GetIndexOfMostFilledStorage();
+					lock (threadsLokers[targetIndex])
+					{
+						switch (targetIndex)
+						{
+							case 0:
+								UniteAndSaveData<PostData.TextData>(targetIndex);
+								break;
+							case 1:
+								UniteAndSaveData<PostData.LinksData>(targetIndex);
+								break;
+							case 2:
+								UniteAndSaveData<PostData.ImagesData>(targetIndex);
+								break;
+							default: break;
+						}
+					}
+				}
 			});
+		}
+
+		private int GetIndexOfMostFilledStorage()
+		{
+			int maxIndex = 0;
+			for (int i = 1; i < dataStorages.Count; i++)
+			{
+				if ((dataStorages[i] as IList).Count > (dataStorages[i-1] as IList).Count)
+					maxIndex = i;
+			}
+			return maxIndex;
+		}
+
+		private void UniteAndSaveData<TData>(int index)
+		{
+			var bufList = FileWorker.LoadFromJsonFile<List<TData>>(paths[index]);
+			bufList.AddRange(dataStorages[index] as List<TData>);
+			FileWorker.SaveToJsonFile(paths[index], bufList);
 		}
 	}
 }
