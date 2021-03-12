@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Text;
+using VkNet.Model;
+using VkNet.Model.Attachments;
 
 namespace vk_feed_parser
 {
@@ -46,6 +48,32 @@ namespace vk_feed_parser
 				$"\"Text\": {textData.postText}\n" +
 				$"\"Links\": {links}\n" +
 				$"\"Images\": {imgs}\n";
+		}
+
+		public static PostData SeparatePost(NewsItem post)
+		{
+			string id = $"{post.SourceId}_{post.PostId}";
+			List<string> Images = Parser.GetAttachments<Photo>(post).ConvertAll(i => i.Sizes[^1].Url.ToString());
+			List<string> Links = Parser.GetAttachments<Link>(post).ConvertAll(i => i.Uri.ToString());
+
+			PostData postData = new PostData()
+			{
+				textData = {
+					postID = id,
+					postText = post.Text
+				},
+				imagesData =
+				{
+					postID = id,
+					postImages = Images
+				},
+				linksData =
+				{
+					postID = id,
+					postLinks = Links
+				}
+			};
+			return postData;
 		}
 	}
 }

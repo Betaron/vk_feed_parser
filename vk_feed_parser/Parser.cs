@@ -73,7 +73,7 @@ namespace vk_feed_parser
 		}
 
 		//	https://github.com/vudeam - is owner of this method idea.
-		private List<TAttType> GetAttachments<TAttType>(NewsItem post) where TAttType : class
+		public static List<TAttType> GetAttachments<TAttType>(NewsItem post) where TAttType : class
 		{
 			if (post.Attachments != null)
 			{
@@ -87,46 +87,17 @@ namespace vk_feed_parser
 			}
 		}
 
-
-		public PostData SeparatePost(NewsItem post)
-		{
-			string id = $"{post.SourceId}_{post.PostId}";
-			List<string> Images = GetAttachments<Photo>(post).ConvertAll(i => i.Sizes.Last().Url.ToString());
-			List<string> Links = GetAttachments<Link>(post).ConvertAll(i => i.Uri.ToString());
-
-			PostData postData = new PostData()
-			{
-				textData = {
-					postID = id,
-					postText = post.Text
-				},
-				imagesData =
-				{
-					postID = id,
-					postImages = Images
-				},
-				linksData =
-				{
-					postID = id,
-					postLinks = Links					
-				}
-			};
-
-			return postData;
-		}
-
 		public Thread GetParseThread()
 		{
 			var thread = new Thread(() =>
 			{
 				var postsDataList = (from item in GetPostsArr(5)
-				 select SeparatePost(item)).ToList();
+				 select PostData.SeparatePost(item)).ToList();
 				foreach (var i in postsDataList)
 				{
 					UIWorker.AddRecord(i.ToString());
 				}
 			});
-
 			return thread;
 		}
 	}
