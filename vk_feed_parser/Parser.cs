@@ -58,18 +58,50 @@ namespace vk_feed_parser
 			return di;
 		}
 
-		public IEnumerable<NewsItem> GetPostsArr(ushort newsCount)
+		/// <summary>
+		/// Gets specified number of posts.
+		/// </summary>
+		/// <param name="newsCount">The number of posts requested.</param>
+		/// <returns>Returns the received posts.</returns>
+		public List<NewsItem> GetPostsList(uint newsCount)
 		{
-			NewsFeed newsFeed = api.NewsFeed.Get(new NewsFeedGetParams() 
-			{ 
+			if (newsCount == 0) return new List<NewsItem>();
+
+			var newsItems = new List<NewsItem>();
+			uint requestNumber;
+			ushort residualAmount;
+			if (newsCount > 100)
+			{
+				requestNumber = newsCount / 100;
+				residualAmount = (ushort)(newsCount - requestNumber * 100);
+			}
+			else
+			{
+				requestNumber = 0;
+				residualAmount = (ushort)newsCount;
+			}
+			for (uint i = 0; i < requestNumber; i++)
+				newsItems.AddRange(GetNewsFeed(100).Items.ToList());
+			if (residualAmount > 0)
+				newsItems.AddRange(GetNewsFeed(residualAmount).Items.ToList());
+			return newsItems;
+		}
+
+		/// <summary>
+		/// Gets a NewsFeed with the specified number of posts.
+		/// </summary>
+		/// <param name="count">The number of posts requested. Less than or equal to 100.</param>
+		/// <returns>Returns the received NewsFeed.</returns>
+		private NewsFeed GetNewsFeed(ushort count)
+		{
+			NewsFeed newsFeed = api.NewsFeed.Get(new NewsFeedGetParams()
+			{
 				Filters = NewsTypes.Post,
-				Count = newsCount,
+				Count = count,
 				StartFrom = nextFrom
 			});
-
 			nextFrom = newsFeed.NextFrom;
-
-			return newsFeed.Items;
+			return newsFeed;
 		}
 
 		//	https://github.com/vudeam - is owner of this method idea.
@@ -91,12 +123,15 @@ namespace vk_feed_parser
 		{
 			var thread = new Thread(() =>
 			{
-				var postsDataList = (from item in GetPostsArr(5)
+				IEnumerable<NewsItem> posts = GetPostsList(1000);
+				var postsDataList = (from item in posts
 				 select PostData.SeparatePost(item)).ToList();
 				foreach (var i in postsDataList)
 				{
 					UIWorker.AddRecord(i.ToString());
 				}
+				ThreadWorker worker = new ThreadWorker(posts);
+				worker.StartNewsSaving();
 			});
 			return thread;
 		}
