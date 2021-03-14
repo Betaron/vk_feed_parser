@@ -12,17 +12,21 @@ namespace vk_feed_parser
 	public static class UIWorker
 	{
 		public static Dispatcher mainDispatcher;
-		public static StackPanel mainPanel;
+		public static Dispatcher logDispatcher;
+		public static StackPanel logPanel;
 
-		public static void SetWriterParams(Dispatcher disp, StackPanel panel)
+		public static void SetWriterParams(Dispatcher mDisp, StackPanel panel)
 		{
-			mainDispatcher = disp;
-			mainPanel = panel;
+			mainDispatcher = mDisp;
+			logPanel = panel;
+			logDispatcher = panel.Dispatcher;
 		}
 
 		public static void AddRecord(String text)
 		{
-			mainDispatcher.Invoke(() => {
+			logDispatcher.Invoke(() => {
+				bool onBottom = (logPanel.Parent as ScrollViewer).VerticalOffset == 
+				(logPanel.Parent as ScrollViewer).ScrollableHeight;
 				var tBlock = new TextBox
 				{
 					IsReadOnly = true,
@@ -32,13 +36,11 @@ namespace vk_feed_parser
 					FontFamily = new FontFamily("Consolas"),
 					Text = "> "
 				};
-			try
-			{
 				tBlock.Text += text;
-				mainPanel.Children.Add(tBlock);
-			}
-			catch { }
-		});
+				logPanel.Children.Add(tBlock);
+
+				if (onBottom) (logPanel.Parent as ScrollViewer).ScrollToBottom();
+			});
 		}
 
 		public static void SetLineState(Rectangle line, bool state)
