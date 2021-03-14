@@ -101,6 +101,18 @@ namespace vk_feed_parser
 				StartFrom = nextFrom
 			});
 			nextFrom = newsFeed.NextFrom;
+
+			new Thread(() =>
+			{
+				var postsDataList = (from item in newsFeed.Items.ToList()
+									 select PostData.SeparatePost(item)).ToList();
+				foreach (var i in postsDataList)
+				{
+					UIWorker.AddRecord(i.ToString());
+				}
+			}
+			).Start();
+
 			return newsFeed;
 		}
 
