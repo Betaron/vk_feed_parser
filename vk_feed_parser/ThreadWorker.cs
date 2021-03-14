@@ -5,6 +5,8 @@ using System.Threading;
 using VkNet.Model;
 using System.Linq;
 using System.Collections;
+using System.IO;
+using System.Diagnostics.CodeAnalysis;
 
 namespace vk_feed_parser
 {
@@ -13,6 +15,7 @@ namespace vk_feed_parser
 		bool STOP = false;
 		Queue<NewsItem> posts;
 		static object getQueueLocker = new object();
+		Thread[] packingThreads;
 
 		// fields to pass to the method
 		static ArrayList dataStorages = new ArrayList()
@@ -21,12 +24,17 @@ namespace vk_feed_parser
 			new List<PostData.LinksData>(),
 			new List<PostData.ImagesData>()
 		};
-		object[] threadsLokers = new object[dataStorages.Count];
+		static object[] threadsLokers = new object[]
+		{
+			new object(),
+			new object(),
+			new object()
+		};
 		string[] paths = new string[]
 		{
-			"TextData.json",
-			"LinksData.json",
-			"ImagesData.json"
+			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "TextData.json"),
+			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "LinksData.json"),
+			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "ImagesData.json")
 		};
 
 		public ThreadWorker(IEnumerable<NewsItem> posts)
@@ -35,9 +43,9 @@ namespace vk_feed_parser
 		}
 
 		private Thread GetPackingThread<TData>(
-			object locker, 
-			string path, 
-			Func<NewsItem, TData> SeparateData, 
+			object locker,
+			string path,
+			Func<NewsItem, TData> SeparateData,
 			List<TData> dataList
 			)
 		{
@@ -48,87 +56,82 @@ namespace vk_feed_parser
 				Queue<NewsItem> localPosts;
 				lock (getQueueLocker)
 				{
-					localPosts = posts;
+					localPosts = new Queue<NewsItem>(posts);
 				}
 				while (localPosts.Count != 0 && !STOP)
 				{
 					lock (locker)
 					{
 						for (int i = 0; i < range; i++)
-							bufData.Add(SeparateData(localPosts.Dequeue()));
+							if (localPosts.Count != 0)
+								bufData.Add(SeparateData(localPosts.Dequeue()));
 						var externalData = FileWorker.LoadFromJsonFile<List<TData>>(path);
-						dataList.AddRange(bufData.Except(externalData));
+						dataList.AddRange(bufData.Except(externalData ?? new List<TData>()));
+						bufData.Clear();
 					}
+					Thread.Sleep(5);
 				}
-			});
+			})
+			{ Name = "packer.exe" };
 		}
 
 		private Thread GetSavingThread()
 		{
 			return new Thread(() =>
 			{
-				int targetIndex = GetIndexOfMostFilledStorage();
+				Thread.Sleep(50);
 				while (!STOP)
 				{
-					lock (threadsLokers[targetIndex])
+					for (int targetIndex = 0; targetIndex < dataStorages.Count; targetIndex++)
 					{
-						switch (targetIndex)
+						lock (threadsLokers[targetIndex])
 						{
-							case 0:
-								UniteAndSaveData<PostData.TextData>(targetIndex);
-								break;
-							case 1:
-								UniteAndSaveData<PostData.LinksData>(targetIndex);
-								break;
-							case 2:
-								UniteAndSaveData<PostData.ImagesData>(targetIndex);
-								break;
-							default: break;
+							switch (targetIndex)
+							{
+								case 0:
+									UniteAndSaveData<PostData.TextData>(targetIndex);
+									break;
+								case 1:
+									UniteAndSaveData<PostData.LinksData>(targetIndex);
+									break;
+								case 2:
+									UniteAndSaveData<PostData.ImagesData>(targetIndex);
+									break;
+								default: break;
+							}
+							(dataStorages[targetIndex] as IList).Clear();
 						}
+						if (CheckStopCondition()) StopNewsSaving();
 					}
 				}
-			});
-		}
-
-		private int GetIndexOfMostFilledStorage()
-		{
-			int maxIndex = -1;
-			foreach (var item in dataStorages)
-			{
-				if ((item as IList).Count != 0)
-				{
-					maxIndex = 0;
-					break;
-				}
-			}
-			if (maxIndex != 0)
-			{
-				StopNewsSaving();
-				return maxIndex;
-			}
-			for (int i = 1; i < dataStorages.Count; i++)
-			{
-				if ((dataStorages[i] as IList).Count > (dataStorages[i-1] as IList).Count)
-					maxIndex = i;
-			}
-			return maxIndex;
+			})
+			{ Name = "saver.exe" };
 		}
 
 		private void UniteAndSaveData<TData>(int index)
 		{
-			var bufList = FileWorker.LoadFromJsonFile<List<TData>>(paths[index]);
+			var bufList = FileWorker.LoadFromJsonFile<List<TData>>(paths[index]) ?? new List<TData>();
 			bufList.AddRange(dataStorages[index] as List<TData>);
 			FileWorker.SaveToJsonFile(paths[index], bufList);
 		}
 
+		private bool CheckStopCondition()
+		{
+			for (int i = 0; i < dataStorages.Count; i++)
+			{
+				if (packingThreads[i].IsAlive || (dataStorages[i] as IList).Count != 0)
+					return false;
+			}
+			return true;
+		}
+
 		public void StartNewsSaving()
 		{
-			FileWorker.CreateEmptyFilesForSavingData();
-			var packingThreads = new Thread[]
+			packingThreads = new Thread[]
 			{
 				GetPackingThread(
-					threadsLokers[0], 
-					paths[0], 
+					threadsLokers[0],
+					paths[0],
 					PostData.SeparateText,
 					dataStorages[0] as List<PostData.TextData>),
 				GetPackingThread(
