@@ -33,6 +33,7 @@ namespace vk_feed_parser.Windows
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			Config.CheckConfigFileValid();
+			FileWorker.CreateEmptyFilesForSavingData();
 			UIWorker.SetWriterParams(Dispatcher, logStack);
 			UIWorker.AddRecord("Welcome to VkFeedParcer 3000");
 		}
