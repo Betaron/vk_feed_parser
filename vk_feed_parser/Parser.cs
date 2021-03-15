@@ -135,15 +135,12 @@ namespace vk_feed_parser
 		{
 			var thread = new Thread(() =>
 			{
-				IEnumerable<NewsItem> posts = GetPostsList(1000);
-				var postsDataList = (from item in posts
-				 select PostData.SeparatePost(item)).ToList();
-				foreach (var i in postsDataList)
+				ThreadWorker worker = new ThreadWorker();
+				for (int i = 0; i < 10; i++)
 				{
-					UIWorker.AddRecord(i.ToString());
+					while (!worker.IsStop) { }
+					worker.StartNewsSaving(GetPostsList(1000));
 				}
-				ThreadWorker worker = new ThreadWorker(posts);
-				worker.StartNewsSaving();
 			});
 			return thread;
 		}

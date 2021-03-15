@@ -12,10 +12,11 @@ namespace vk_feed_parser
 {
 	public class ThreadWorker
 	{
-		bool STOP = false;
+		public bool IsStop = true;
 		Queue<NewsItem> posts;
 		static object getQueueLocker = new object();
 		Thread[] packingThreads;
+		Thread savingThread;
 
 		// fields to pass to the method
 		static ArrayList dataStorages = new ArrayList()
@@ -37,11 +38,6 @@ namespace vk_feed_parser
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "ImagesData.json")
 		};
 
-		public ThreadWorker(IEnumerable<NewsItem> posts)
-		{
-			this.posts = new Queue<NewsItem>(posts);
-		}
-
 		private Thread GetPackingThread<TData>(
 			object locker,
 			string path,
@@ -58,15 +54,16 @@ namespace vk_feed_parser
 				{
 					localPosts = new Queue<NewsItem>(posts);
 				}
-				while (localPosts.Count != 0 && !STOP)
+				while (localPosts.Count != 0 && !IsStop)
 				{
 					lock (locker)
 					{
 						for (int i = 0; i < range; i++)
 							if (localPosts.Count != 0)
 								bufData.Add(SeparateData(localPosts.Dequeue()));
-						var externalData = FileWorker.LoadFromJsonFile<List<TData>>(path);
-						dataList.AddRange(bufData.Except(externalData ?? new List<TData>()));
+						//var externalData = FileWorker.LoadFromJsonFile<List<TData>>(path);
+						//dataList.AddRange(bufData.Except(externalData ?? new List<TData>()));
+						dataList.AddRange(bufData);
 						bufData.Clear();
 					}
 					Thread.Sleep(5);
@@ -80,7 +77,7 @@ namespace vk_feed_parser
 			return new Thread(() =>
 			{
 				Thread.Sleep(50);
-				while (!STOP)
+				while (!IsStop)
 				{
 					for (int targetIndex = 0; targetIndex < dataStorages.Count; targetIndex++)
 					{
@@ -125,8 +122,10 @@ namespace vk_feed_parser
 			return true;
 		}
 
-		public void StartNewsSaving()
+		public void StartNewsSaving(IEnumerable<NewsItem> posts)
 		{
+			IsStop = false;
+			this.posts = new Queue<NewsItem>(posts);
 			packingThreads = new Thread[]
 			{
 				GetPackingThread(
@@ -145,7 +144,7 @@ namespace vk_feed_parser
 					PostData.SeparateImages,
 					dataStorages[2] as List<PostData.ImagesData>)
 			};
-			var savingThread = GetSavingThread();
+			savingThread = GetSavingThread();
 
 			foreach (var item in packingThreads)
 			{
@@ -155,6 +154,10 @@ namespace vk_feed_parser
 			savingThread.Start();
 		}
 
-		public void StopNewsSaving() => STOP = true;
+		private void StopNewsSaving()
+		{
+			posts.Clear();
+			IsStop = true;
+		}
 	}
 }
