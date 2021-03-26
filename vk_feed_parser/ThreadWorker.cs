@@ -139,6 +139,14 @@ namespace vk_feed_parser
 			}
 			savingThread = GetSavingThread();
 
+			new Thread((object p)=> 
+			{
+				foreach (var item in p as IEnumerable<NewsItem>)
+				{
+					UIWorker.AddRecord($"{item.SourceId}_{item.PostId}");
+				}
+			}).Start(posts);
+
 			foreach (var item in packingThreads) item.Start();
 			savingThread.Start();
 		}

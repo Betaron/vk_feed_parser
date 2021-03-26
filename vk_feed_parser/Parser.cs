@@ -127,8 +127,8 @@ namespace vk_feed_parser
 				ThreadWorker worker = new ThreadWorker();
 				for (int i = 0; i < 10; i++)
 				{
-					while (!worker.IsStop) { }
 					worker.StartNewsSaving(GetPostsList(100));
+					while (!worker.IsStop) { }
 				}
 				UIWorker.AddRecord("Parsing ended!!!");
 			});
