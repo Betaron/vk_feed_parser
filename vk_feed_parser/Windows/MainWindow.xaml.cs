@@ -106,6 +106,20 @@ namespace vk_feed_parser.Windows
 			{
 				Thread parsingThread = parser.GetParseThread();
 				parsingThread.Start();
+				this.Dispatcher.Invoke(() =>
+				{
+					setPreferencesBtn.IsEnabled = false;
+					runParseBtn.IsEnabled = false;
+				});
+				new Thread(()=>
+				{
+					parsingThread.Join();
+					this.Dispatcher.Invoke(() =>
+					{
+						setPreferencesBtn.IsEnabled = true;
+						runParseBtn.IsEnabled = true;
+					});
+				}).Start();
 			}
 		}
 	}

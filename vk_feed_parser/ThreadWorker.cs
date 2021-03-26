@@ -95,7 +95,7 @@ namespace vk_feed_parser
 						lock (threadsLokers[targetIndex])
 						{
 							UniteAndSaveData(dataStorages[targetIndex], paths[targetIndex]);
-							(dataStorages[targetIndex]).Clear();
+							dataStorages[targetIndex].Clear();
 						}
 						if (CheckStopCondition()) StopNewsSaving();
 					}
