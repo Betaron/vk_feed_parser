@@ -71,7 +71,10 @@ namespace vk_feed_parser
 							if (localPosts.Count != 0)
 								bufData.Add(SeparateData(localPosts.Dequeue()));
 						var externalData = FileWorker.LoadFromJsonFile<List<PostData>>(path);
-						dataList.AddRange(bufData.Except(externalData ?? new List<PostData>()));
+						dataList.AddRange(bufData.Except(
+							externalData ?? new List<PostData>(),
+							new PostDataEqualityComparer()
+							));
 						bufData.Clear();
 					}
 					Thread.Sleep(5);

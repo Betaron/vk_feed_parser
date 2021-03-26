@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using VkNet.Model;
 using VkNet.Model.Attachments;
 
@@ -39,5 +41,14 @@ namespace vk_feed_parser
 			postId = $"{post.SourceId}_{post.PostId}",
 			postContent = Parser.GetAttachments<Photo>(post).ConvertAll(i => i.Sizes[^1].Url.ToString())
 		};
+	}
+
+	class PostDataEqualityComparer : IEqualityComparer<PostData>
+	{
+		public bool Equals([AllowNull] PostData x, [AllowNull] PostData y) =>
+			x.postId == y.postId ? true : false;
+
+		public int GetHashCode([DisallowNull] PostData obj) => 
+			obj.postId.GetHashCode();
 	}
 }
