@@ -14,23 +14,17 @@ namespace vk_feed_parser
 	{
 		public bool IsStop = true;
 		Queue<NewsItem> posts;
-		static object getQueueLocker = new object();
-		Thread[] packingThreads;
+		static object queueLocker = new object();
+		List<Thread> packingThreads = new List<Thread>();
 		Thread savingThread;
 
-		// fields to pass to the method
-		static ArrayList dataStorages = new ArrayList()
-		{
-			new List<PostData.TextData>(),
-			new List<PostData.LinksData>(),
-			new List<PostData.ImagesData>()
-		};
 		static object[] threadsLokers = new object[]
 		{
 			new object(),
 			new object(),
 			new object()
 		};
+
 		string[] paths = new string[]
 		{
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "TextData.json"),
@@ -38,19 +32,34 @@ namespace vk_feed_parser
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "ImagesData.json")
 		};
 
-		private Thread GetPackingThread<TData>(
+		Func<NewsItem, PostData>[] separatingFuncs = new Func<NewsItem, PostData>[]
+		{
+			PostData.SeparateText,
+			PostData.SeparateLinks,
+			PostData.SeparateImages
+		};
+
+		// fields to pass to the method
+		static List<PostData>[] dataStorages = new List<PostData>[]
+		{
+			new List<PostData>(),
+			new List<PostData>(),
+			new List<PostData>()
+		};
+
+		private Thread GetPackingThread(
 			object locker,
 			string path,
-			Func<NewsItem, TData> SeparateData,
-			List<TData> dataList
+			Func<NewsItem, PostData> SeparateData,
+			List<PostData> dataList
 			)
 		{
 			return new Thread(() =>
 			{
 				const uint range = 10;
-				var bufData = new List<TData>();
+				var bufData = new List<PostData>();
 				Queue<NewsItem> localPosts;
-				lock (getQueueLocker)
+				lock (queueLocker)
 				{
 					localPosts = new Queue<NewsItem>(posts);
 				}
@@ -61,9 +70,8 @@ namespace vk_feed_parser
 						for (int i = 0; i < range; i++)
 							if (localPosts.Count != 0)
 								bufData.Add(SeparateData(localPosts.Dequeue()));
-						//var externalData = FileWorker.LoadFromJsonFile<List<TData>>(path);
-						//dataList.AddRange(bufData.Except(externalData ?? new List<TData>()));
-						dataList.AddRange(bufData);
+						var externalData = FileWorker.LoadFromJsonFile<List<PostData>>(path);
+						dataList.AddRange(bufData.Except(externalData ?? new List<PostData>()));
 						bufData.Clear();
 					}
 					Thread.Sleep(5);
@@ -79,24 +87,12 @@ namespace vk_feed_parser
 				Thread.Sleep(50);
 				while (!IsStop)
 				{
-					for (int targetIndex = 0; targetIndex < dataStorages.Count; targetIndex++)
+					for (int targetIndex = 0; targetIndex < threadsLokers.Length; targetIndex++)
 					{
 						lock (threadsLokers[targetIndex])
 						{
-							switch (targetIndex)
-							{
-								case 0:
-									UniteAndSaveData<PostData.TextData>(targetIndex);
-									break;
-								case 1:
-									UniteAndSaveData<PostData.LinksData>(targetIndex);
-									break;
-								case 2:
-									UniteAndSaveData<PostData.ImagesData>(targetIndex);
-									break;
-								default: break;
-							}
-							(dataStorages[targetIndex] as IList).Clear();
+							UniteAndSaveData(dataStorages[targetIndex], paths[targetIndex]);
+							(dataStorages[targetIndex]).Clear();
 						}
 						if (CheckStopCondition()) StopNewsSaving();
 					}
@@ -105,18 +101,20 @@ namespace vk_feed_parser
 			{ Name = "saver.exe" };
 		}
 
-		private void UniteAndSaveData<TData>(int index)
+		private void UniteAndSaveData(List<PostData> storage, string path)
 		{
-			var bufList = FileWorker.LoadFromJsonFile<List<TData>>(paths[index]) ?? new List<TData>();
-			bufList.AddRange(dataStorages[index] as List<TData>);
-			FileWorker.SaveToJsonFile(paths[index], bufList);
+			var bufList = FileWorker.LoadFromJsonFile<List<PostData>>(path) ?? new List<PostData>();
+			bufList.AddRange(storage);
+			FileWorker.SaveToJsonFile(path, bufList);
 		}
 
 		private bool CheckStopCondition()
 		{
-			for (int i = 0; i < dataStorages.Count; i++)
+			if (packingThreads.Count == 0)
+				return true;
+			for (int i = 0; i < threadsLokers.Length; i++)
 			{
-				if (packingThreads[i].IsAlive || (dataStorages[i] as IList).Count != 0)
+				if (packingThreads[i].IsAlive || (dataStorages[i]).Count != 0)
 					return false;
 			}
 			return true;
@@ -126,37 +124,26 @@ namespace vk_feed_parser
 		{
 			IsStop = false;
 			this.posts = new Queue<NewsItem>(posts);
-			packingThreads = new Thread[]
+
+			for (int i = 0; i < threadsLokers.Length; i++)
 			{
-				GetPackingThread(
-					threadsLokers[0],
-					paths[0],
-					PostData.SeparateText,
-					dataStorages[0] as List<PostData.TextData>),
-				GetPackingThread(
-					threadsLokers[1],
-					paths[1],
-					PostData.SeparateLinks,
-					dataStorages[1] as List<PostData.LinksData>),
-				GetPackingThread(
-					threadsLokers[2],
-					paths[2],
-					PostData.SeparateImages,
-					dataStorages[2] as List<PostData.ImagesData>)
-			};
+				packingThreads.Add(GetPackingThread(
+					threadsLokers[i],
+					paths[i],
+					separatingFuncs[i],
+					dataStorages[i]
+					));
+			}
 			savingThread = GetSavingThread();
 
-			foreach (var item in packingThreads)
-			{
-				item.Start();
-			}
-
+			foreach (var item in packingThreads) item.Start();
 			savingThread.Start();
 		}
 
 		private void StopNewsSaving()
 		{
 			posts.Clear();
+			packingThreads.Clear();
 			IsStop = true;
 		}
 	}

@@ -102,17 +102,6 @@ namespace vk_feed_parser
 			});
 			nextFrom = newsFeed.NextFrom;
 
-			new Thread(() =>
-			{
-				var postsDataList = (from item in newsFeed.Items.ToList()
-									 select PostData.SeparatePost(item)).ToList();
-				foreach (var i in postsDataList)
-				{
-					UIWorker.AddRecord(i.ToString());
-				}
-			}
-			).Start();
-
 			return newsFeed;
 		}
 
@@ -139,8 +128,9 @@ namespace vk_feed_parser
 				for (int i = 0; i < 10; i++)
 				{
 					while (!worker.IsStop) { }
-					worker.StartNewsSaving(GetPostsList(1000));
+					worker.StartNewsSaving(GetPostsList(100));
 				}
+				UIWorker.AddRecord("Parsing ended!!!");
 			});
 			return thread;
 		}
