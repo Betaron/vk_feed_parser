@@ -33,6 +33,7 @@ namespace vk_feed_parser.Windows
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			Config.CheckConfigFileValid();
+			FileWorker.CreateEmptyFilesForSavingData();
 			UIWorker.SetWriterParams(Dispatcher, logStack);
 			UIWorker.AddRecord("Welcome to VkFeedParcer 3000");
 		}
@@ -105,6 +106,20 @@ namespace vk_feed_parser.Windows
 			{
 				Thread parsingThread = parser.GetParseThread();
 				parsingThread.Start();
+				this.Dispatcher.Invoke(() =>
+				{
+					setPreferencesBtn.IsEnabled = false;
+					runParseBtn.IsEnabled = false;
+				});
+				new Thread(()=>
+				{
+					parsingThread.Join();
+					this.Dispatcher.Invoke(() =>
+					{
+						setPreferencesBtn.IsEnabled = true;
+						runParseBtn.IsEnabled = true;
+					});
+				}).Start();
 			}
 		}
 	}
