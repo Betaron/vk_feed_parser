@@ -46,7 +46,7 @@ namespace vk_feed_parser
 	class PostDataEqualityComparer : IEqualityComparer<PostData>
 	{
 		public bool Equals([AllowNull] PostData x, [AllowNull] PostData y) =>
-			x.postId == y.postId ? true : false;
+			x.postId.Equals(y.postId);
 
 		public int GetHashCode([DisallowNull] PostData obj) => 
 			obj.postId.GetHashCode();
