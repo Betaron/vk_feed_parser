@@ -8,6 +8,7 @@ using System.Collections;
 using System.IO;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
+using Newtonsoft.Json;
 
 namespace vk_feed_parser
 {
@@ -18,6 +19,7 @@ namespace vk_feed_parser
 		static object queueLocker = new object();
 		List<Thread> packingThreads = new List<Thread>();
 		Thread savingThread;
+		MemoryMappedFile mmf;
 
 		static Mutex[] mutices = new Mutex[]
 		{
@@ -26,14 +28,14 @@ namespace vk_feed_parser
 			new Mutex(false, "mutex2"),
 		};
 
-		string[] paths = new string[]
+		static string[] paths = new string[]
 		{
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "TextData.json"),
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "LinksData.json"),
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "ImagesData.json")
 		};
 
-		Func<NewsItem, PostData>[] separatingFuncs = new Func<NewsItem, PostData>[]
+		static Func<NewsItem, PostData>[] separatingFuncs = new Func<NewsItem, PostData>[]
 		{
 			PostData.SeparateText,
 			PostData.SeparateLinks,
@@ -47,6 +49,20 @@ namespace vk_feed_parser
 			new List<PostData>(),
 			new List<PostData>()
 		};
+
+		public ThreadWorker()
+		{
+			mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths");
+			
+			using (var stream = mmf.CreateViewStream())
+			{
+				BinaryWriter writer = new BinaryWriter(stream);
+				writer.Write(new string(' ', 5000));
+				stream.Seek(0, SeekOrigin.Begin);
+				//writer.Write(JsonConvert.SerializeObject(paths));
+				writer.Write(JsonConvert.SerializeObject(new string[] {"Hello, MMF!", "amam", "AAA"}));
+			}
+		}
 
 		private Thread GetPackingThread(
 			Mutex mutex,
