@@ -21,6 +21,7 @@ namespace Watcher
 	{
 		private int eventId = 1;
 		private MemoryMappedFile mmf;
+		private readonly string WatcherDataPath = @"C:\Users\agaba\Desktop\ParsedNewsCounts.txt";
 
 		public Watcher()
 		{
@@ -71,7 +72,7 @@ namespace Watcher
 
 			List<string> paths = new List<string>();
 			List<Mutex> mutices = new List<Mutex>();
-			List<int> counts = new List<int>();
+			object locker = new object();
 
 			if (Process.GetProcessesByName("vk_feed_parser").Count() != 0)
 			{
@@ -112,7 +113,45 @@ namespace Watcher
 						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
 				}
 
+				if (File.Exists(WatcherDataPath))
+					File.Delete(WatcherDataPath);
+				for (int i = 0; i < paths.Count; i++)
+				{
+					GetCountingThread(mutices[i], paths[i], locker).Start();
+				}
 			}
 		}
+
+		/// <summary>
+		/// Thread reading the file with posts and count them and write that number at file
+		/// </summary>
+		/// <param name="mutex">out Mutex, which locking file with posts</param>
+		/// <param name="path">Path to parsed data</param>
+		/// <param name="locker">loccal locker for locking file with counts of posts</param>
+		private Thread GetCountingThread(Mutex mutex, string path, object locker) =>
+			new Thread(()=> {
+				try
+				{
+					mutex.WaitOne();
+					eventLog.WriteEntry($"Entering to: {path}", EventLogEntryType.Information, eventId);
+					string readedData = File.ReadAllText(path);
+					List<object> deszedPosts = JsonConvert.DeserializeObject<List<object>>(readedData);
+					int count = deszedPosts.Count;
+					lock (locker)
+					{
+						if (File.Exists(path))
+							File.AppendAllText(WatcherDataPath, $"{path}: {count}\n");
+					}
+				}
+				catch (Exception ex)
+				{
+					eventLog.WriteEntry("Countng and writing block: \n" +
+						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
+				}
+				finally
+				{
+					mutex.ReleaseMutex();
+				}
+			});
 	}
 }
