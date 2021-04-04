@@ -25,14 +25,16 @@ namespace Watcher
 		public Watcher()
 		{
 			InitializeComponent();
-			eventLog1 = new System.Diagnostics.EventLog();
-			if (!System.Diagnostics.EventLog.SourceExists("MySource"))
-			{
-				System.Diagnostics.EventLog.CreateEventSource("MySource", "MyNewLog");
-			}
-			eventLog1.Source = "MySource";
-			eventLog1.Log = "MyNewLog";
+			eventLog = new EventLog();
+			eventLog.Source = "WatcherService";
+			eventLog.Log = "WatcherLog";
+			if (!EventLog.SourceExists(eventLog.Source))
+				EventLog.CreateEventSource(eventLog.Source, eventLog.Log);
+		}
 
+		protected override void OnStart(string[] args)
+		{
+			eventLog.WriteEntry("In OnStart.");
 
 			var sid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
 			var ace = new AccessRule<MemoryMappedFileRights>(
@@ -48,17 +50,8 @@ namespace Watcher
 				MemoryMappedFileOptions.None,
 				acl,
 				HandleInheritability.None);
-		}
 
-		~Watcher()
-		{
-			mmf.Dispose();
-		}
-
-		protected override void OnStart(string[] args)
-		{
-			eventLog1.WriteEntry("In OnStart.");
-			// Set up a timer that triggers every minute.
+			// Set up a timer that triggers every timer.Interval.
 			var timer = new System.Timers.Timer();
 			timer.Interval = 5000;
 			timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
@@ -67,13 +60,14 @@ namespace Watcher
 
 		protected override void OnStop()
 		{
-			eventLog1.WriteEntry("In OnStop.");
+			eventLog.WriteEntry("In OnStop.");
+			mmf.Dispose();
 		}
 
 		public void OnTimer(object sender, ElapsedEventArgs args)
 		{
 			// TODO: Insert monitoring activities here.
-			eventLog1.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventId++);
+			eventLog.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventId++);
 
 			List<Mutex> mutices = new List<Mutex>();
 			List<string> paths = new List<string>();
@@ -82,7 +76,7 @@ namespace Watcher
 			{
 				try
 				{
-					eventLog1.WriteEntry("Enter to try block", EventLogEntryType.Information, eventId);
+					eventLog.WriteEntry("Enter to try block", EventLogEntryType.Information, eventId);
 					using (MemoryMappedFile mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths"))
 					{
 						using (var stream = mmf.CreateViewStream())
@@ -93,7 +87,7 @@ namespace Watcher
 							ret = ret.Trim();
 							ret = ret.Remove(0, ret.IndexOf('['));
 							paths = JsonConvert.DeserializeObject<string[]>(ret).ToList();
-							eventLog1.WriteEntry("DeserializeObject sucseed", EventLogEntryType.Information, eventId);
+							eventLog.WriteEntry("DeserializeObject sucseed", EventLogEntryType.Information, eventId);
 						}
 
 						File.WriteAllText(@"C:\Users\agaba\Desktop\paths.txt", $"{paths[0]}");
@@ -102,7 +96,7 @@ namespace Watcher
 				}
 				catch (Exception ex)
 				{
-					eventLog1.WriteEntry("Exception: " + ex.Message, EventLogEntryType.Error, eventId);
+					eventLog.WriteEntry("Exception: " + ex.Message, EventLogEntryType.Error, eventId);
 				}
 			}
 		}
