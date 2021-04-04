@@ -69,8 +69,9 @@ namespace Watcher
 			// TODO: Insert monitoring activities here.
 			eventLog.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventId++);
 
-			List<Mutex> mutices = new List<Mutex>();
 			List<string> paths = new List<string>();
+			List<Mutex> mutices = new List<Mutex>();
+			List<int> counts = new List<int>();
 
 			if (Process.GetProcessesByName("vk_feed_parser").Count() != 0)
 			{
@@ -87,17 +88,30 @@ namespace Watcher
 							ret = ret.Trim();
 							ret = ret.Remove(0, ret.IndexOf('['));
 							paths = JsonConvert.DeserializeObject<string[]>(ret).ToList();
-							eventLog.WriteEntry("DeserializeObject sucseed", EventLogEntryType.Information, eventId);
+							eventLog.WriteEntry("DeserializeObject succeeded", EventLogEntryType.Information, eventId);
 						}
-
-						File.WriteAllText(@"C:\Users\agaba\Desktop\paths.txt", $"{paths[0]}");
-						
 					}
 				}
 				catch (Exception ex)
 				{
-					eventLog.WriteEntry("Exception: " + ex.Message, EventLogEntryType.Error, eventId);
+					eventLog.WriteEntry("Getting data from memory mapped file and deserializing block: \n" +
+						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
 				}
+
+				try
+				{
+					for (int i = 0; i < paths.Count; i++)
+					{
+						mutices.Add(Mutex.OpenExisting($@"Global\mutex{i}"));
+					}
+					eventLog.WriteEntry("Getting mutices succeeded", EventLogEntryType.Information, eventId);
+				}
+				catch (Exception ex)
+				{
+					eventLog.WriteEntry("Getting mutices block: \n" +
+						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
+				}
+
 			}
 		}
 	}
