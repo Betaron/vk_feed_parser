@@ -7,6 +7,8 @@ using System.Linq;
 using System.Collections;
 using System.IO;
 using System.Diagnostics.CodeAnalysis;
+using System.IO.MemoryMappedFiles;
+using Newtonsoft.Json;
 
 namespace vk_feed_parser
 {
@@ -17,22 +19,23 @@ namespace vk_feed_parser
 		static object queueLocker = new object();
 		List<Thread> packingThreads = new List<Thread>();
 		Thread savingThread;
+		MemoryMappedFile mmf;
 
-		static object[] threadsLokers = new object[]
+		static Mutex[] mutices = new Mutex[]
 		{
-			new object(),
-			new object(),
-			new object()
+			new Mutex(false, @"Global\mutex0"),
+			new Mutex(false, @"Global\mutex1"),
+			new Mutex(false, @"Global\mutex2"),
 		};
 
-		string[] paths = new string[]
+		static string[] paths = new string[]
 		{
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "TextData.json"),
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "LinksData.json"),
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "ImagesData.json")
 		};
 
-		Func<NewsItem, PostData>[] separatingFuncs = new Func<NewsItem, PostData>[]
+		static Func<NewsItem, PostData>[] separatingFuncs = new Func<NewsItem, PostData>[]
 		{
 			PostData.SeparateText,
 			PostData.SeparateLinks,
@@ -47,8 +50,21 @@ namespace vk_feed_parser
 			new List<PostData>()
 		};
 
+		public ThreadWorker()
+		{
+			mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths");
+			
+			using (var stream = mmf.CreateViewStream())
+			{
+				BinaryWriter writer = new BinaryWriter(stream);
+				writer.Write(new string(' ', 5000));
+				stream.Seek(0, SeekOrigin.Begin);
+				writer.Write(JsonConvert.SerializeObject(paths));
+			}
+		}
+
 		private Thread GetPackingThread(
-			object locker,
+			Mutex mutex,
 			string path,
 			Func<NewsItem, PostData> SeparateData,
 			List<PostData> dataList
@@ -65,7 +81,7 @@ namespace vk_feed_parser
 				}
 				while (localPosts.Count != 0 && !IsStop)
 				{
-					lock (locker)
+					mutex.WaitOne();
 					{
 						for (int i = 0; i < range; i++)
 							if (localPosts.Count != 0)
@@ -77,6 +93,7 @@ namespace vk_feed_parser
 							));
 						bufData.Clear();
 					}
+					mutex.ReleaseMutex();
 					Thread.Sleep(5);
 				}
 			})
@@ -90,13 +107,14 @@ namespace vk_feed_parser
 				Thread.Sleep(50);
 				while (!IsStop)
 				{
-					for (int targetIndex = 0; targetIndex < threadsLokers.Length; targetIndex++)
+					for (int targetIndex = 0; targetIndex < mutices.Length; targetIndex++)
 					{
-						lock (threadsLokers[targetIndex])
+						mutices[targetIndex].WaitOne();
 						{
 							UniteAndSaveData(dataStorages[targetIndex], paths[targetIndex]);
 							dataStorages[targetIndex].Clear();
 						}
+						mutices[targetIndex].ReleaseMutex();
 						if (CheckStopCondition()) StopNewsSaving();
 					}
 				}
@@ -115,7 +133,7 @@ namespace vk_feed_parser
 		{
 			if (packingThreads.Count == 0)
 				return true;
-			for (int i = 0; i < threadsLokers.Length; i++)
+			for (int i = 0; i < mutices.Length; i++)
 			{
 				if (packingThreads[i].IsAlive || (dataStorages[i]).Count != 0)
 					return false;
@@ -128,10 +146,10 @@ namespace vk_feed_parser
 			IsStop = false;
 			this.posts = new Queue<NewsItem>(posts);
 
-			for (int i = 0; i < threadsLokers.Length; i++)
+			for (int i = 0; i < mutices.Length; i++)
 			{
 				packingThreads.Add(GetPackingThread(
-					threadsLokers[i],
+					mutices[i],
 					paths[i],
 					separatingFuncs[i],
 					dataStorages[i]
@@ -139,7 +157,7 @@ namespace vk_feed_parser
 			}
 			savingThread = GetSavingThread();
 
-			new Thread((object p)=> 
+			new Thread((object p) =>
 			{
 				foreach (var item in p as IEnumerable<NewsItem>)
 				{
