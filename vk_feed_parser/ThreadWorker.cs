@@ -23,9 +23,9 @@ namespace vk_feed_parser
 
 		static Mutex[] mutices = new Mutex[]
 		{
-			new Mutex(false, "mutex0"),
-			new Mutex(false, "mutex1"),
-			new Mutex(false, "mutex2"),
+			new Mutex(false, @"Global\mutex0"),
+			new Mutex(false, @"Global\mutex1"),
+			new Mutex(false, @"Global\mutex2"),
 		};
 
 		static string[] paths = new string[]
@@ -59,8 +59,7 @@ namespace vk_feed_parser
 				BinaryWriter writer = new BinaryWriter(stream);
 				writer.Write(new string(' ', 5000));
 				stream.Seek(0, SeekOrigin.Begin);
-				//writer.Write(JsonConvert.SerializeObject(paths));
-				writer.Write(JsonConvert.SerializeObject(new string[] {"Hello, MMF!", "amam", "AAA"}));
+				writer.Write(JsonConvert.SerializeObject(paths));
 			}
 		}
 
