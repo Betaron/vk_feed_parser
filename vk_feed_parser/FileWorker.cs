@@ -25,24 +25,5 @@ namespace vk_feed_parser
 		{
 			return JsonConvert.DeserializeObject<TItem>(File.ReadAllText(path), settings);
 		}
-
-		/// <summary>
-		/// Creating new empty JSON files for saving data about text, links, images in 'DataStorages' folder, if they does not exists.
-		/// </summary>
-		public static void CreateEmptyFilesForSavingData()
-		{
-			string rootFolder = Directory.GetCurrentDirectory();
-			string dataFilesFolder = "DataStorages";
-			string textDataPath = Path.Combine(rootFolder, dataFilesFolder, "TextData.json");
-			string linksDataPath = Path.Combine(rootFolder, dataFilesFolder, "LinksData.json");
-			string imagesDataPath = Path.Combine(rootFolder, dataFilesFolder, "ImagesData.json");
-			Directory.CreateDirectory(Path.Combine(rootFolder, dataFilesFolder));
-			if (!File.Exists(textDataPath))
-				File.Create(textDataPath);
-			if (!File.Exists(linksDataPath))
-				File.Create(linksDataPath);
-			if (!File.Exists(imagesDataPath))
-				File.Create(imagesDataPath);
-		}
 	}
 }

@@ -53,7 +53,7 @@ namespace vk_feed_parser
 		public ThreadWorker()
 		{
 			mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths");
-			
+
 			using (var stream = mmf.CreateViewStream())
 			{
 				BinaryWriter writer = new BinaryWriter(stream);
@@ -86,7 +86,9 @@ namespace vk_feed_parser
 						for (int i = 0; i < range; i++)
 							if (localPosts.Count != 0)
 								bufData.Add(SeparateData(localPosts.Dequeue()));
-						var externalData = FileWorker.LoadFromJsonFile<List<PostData>>(path);
+						var externalData = new List<PostData>();
+						if (File.Exists(path))
+							externalData = FileWorker.LoadFromJsonFile<List<PostData>>(path);
 						dataList.AddRange(bufData.Except(
 							externalData ?? new List<PostData>(),
 							new PostDataEqualityComparer()
@@ -124,7 +126,9 @@ namespace vk_feed_parser
 
 		private void UniteAndSaveData(List<PostData> storage, string path)
 		{
-			var bufList = FileWorker.LoadFromJsonFile<List<PostData>>(path) ?? new List<PostData>();
+			var bufList = new List<PostData>();
+			if (File.Exists(path))
+				bufList = FileWorker.LoadFromJsonFile<List<PostData>>(path);
 			bufList.AddRange(storage);
 			FileWorker.SaveToJsonFile(path, bufList);
 		}
