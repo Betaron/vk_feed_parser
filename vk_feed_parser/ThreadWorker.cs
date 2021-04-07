@@ -21,6 +21,7 @@ namespace vk_feed_parser
 		Thread savingThread;
 		MemoryMappedFile mmf;
 
+		// mutises for sinchronize saving and writing threads
 		static Mutex[] mutices = new Mutex[]
 		{
 			new Mutex(false, @"Global\mutex0"),
@@ -28,6 +29,7 @@ namespace vk_feed_parser
 			new Mutex(false, @"Global\mutex2"),
 		};
 
+		// paths to saving separated data
 		static string[] paths = new string[]
 		{
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "TextData.json"),
@@ -35,6 +37,7 @@ namespace vk_feed_parser
 			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "ImagesData.json")
 		};
 
+		// methods for separating raw data
 		static Func<NewsItem, PostData>[] separatingFuncs = new Func<NewsItem, PostData>[]
 		{
 			PostData.SeparateText,
@@ -50,6 +53,9 @@ namespace vk_feed_parser
 			new List<PostData>()
 		};
 
+		/// <summary>
+		/// Constructor open the memory mapped file and write paths into it
+		/// </summary>
 		public ThreadWorker()
 		{
 			mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths");
@@ -63,6 +69,14 @@ namespace vk_feed_parser
 			}
 		}
 
+		/// <summary>
+		/// method creating a thread, which packing raw data to ready to save json format
+		/// </summary>
+		/// <param name="mutex">mutex for sinchronize saving and this writing threads</param>
+		/// <param name="path">path to file, in which containing the parsed data</param>
+		/// <param name="SeparateData">func for separating data</param>
+		/// <param name="dataList">buffer storage for collecting data. This storage imagine the queue for saving into file</param>
+		/// <returns>packing thread</returns>
 		private Thread GetPackingThread(
 			Mutex mutex,
 			string path,
@@ -102,6 +116,10 @@ namespace vk_feed_parser
 			{ Name = "packer.exe" };
 		}
 
+		/// <summary>
+		/// create thread, which saving previously prepeared data to corresponding file
+		/// </summary>
+		/// <returns>saving thread</returns>
 		private Thread GetSavingThread()
 		{
 			return new Thread(() =>
@@ -124,6 +142,11 @@ namespace vk_feed_parser
 			{ Name = "saver.exe" };
 		}
 
+		/// <summary>
+		/// writing post data to JSON file
+		/// </summary>
+		/// <param name="storage">buffer storage for collecting data. This storage imagine the queue for saving into file</param>
+		/// <param name="path">path to file, in which containing the parsed data</param>
 		private void UniteAndSaveData(List<PostData> storage, string path)
 		{
 			var bufList = new List<PostData>();
@@ -133,6 +156,10 @@ namespace vk_feed_parser
 			FileWorker.SaveToJsonFile(path, bufList);
 		}
 
+		/// <summary>
+		/// check run condition of parsing process
+		/// </summary>
+		/// <returns>if programm is stop - true, else - false</returns>
 		private bool CheckStopCondition()
 		{
 			if (packingThreads.Count == 0)
@@ -145,6 +172,10 @@ namespace vk_feed_parser
 			return true;
 		}
 
+		/// <summary>
+		/// starting the all packing and one saving thread
+		/// </summary>
+		/// <param name="posts">raw posts, right from vk</param>
 		public void StartNewsSaving(IEnumerable<NewsItem> posts)
 		{
 			IsStop = false;
@@ -173,6 +204,9 @@ namespace vk_feed_parser
 			savingThread.Start();
 		}
 
+		/// <summary>
+		/// Clears raw posts and array of packing threads and change run state
+		/// </summary>
 		private void StopNewsSaving()
 		{
 			posts.Clear();
