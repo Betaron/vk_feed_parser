@@ -58,14 +58,21 @@ namespace vk_feed_parser
 		/// </summary>
 		public ThreadWorker()
 		{
-			mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths");
-
-			using (var stream = mmf.CreateViewStream())
+			try
 			{
-				BinaryWriter writer = new BinaryWriter(stream);
-				writer.Write(new string(' ', 5000));
-				stream.Seek(0, SeekOrigin.Begin);
-				writer.Write(JsonConvert.SerializeObject(paths));
+				mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths");
+
+				using (var stream = mmf.CreateViewStream())
+				{
+					BinaryWriter writer = new BinaryWriter(stream);
+					writer.Write(new string(' ', 5000));
+					stream.Seek(0, SeekOrigin.Begin);
+					writer.Write(JsonConvert.SerializeObject(paths));
+				}
+			}
+			catch
+			{
+				UIWorker.AddRecord("Service is anactive..");
 			}
 		}
 
