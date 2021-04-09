@@ -15,6 +15,8 @@ namespace vk_feed_parser
 		public static Dispatcher logDispatcher;
 		public static StackPanel logPanel;
 
+		/// <param name="mDisp">dispatcher of main window</param>
+		/// <param name="panel">panel, in which will be writting messages</param>
 		public static void SetWriterParams(Dispatcher mDisp, StackPanel panel)
 		{
 			mainDispatcher = mDisp;
@@ -22,6 +24,10 @@ namespace vk_feed_parser
 			logDispatcher = panel.Dispatcher;
 		}
 
+		/// <summary>
+		/// add record to logPanel
+		/// </summary>
+		/// <param name="text">message test</param>
 		public static void AddRecord(String text)
 		{
 			logDispatcher.Invoke(() => {
