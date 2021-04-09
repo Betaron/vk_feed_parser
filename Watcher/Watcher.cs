@@ -23,6 +23,9 @@ namespace Watcher
 		private MemoryMappedFile mmf;
 		private readonly string WatcherDataPath = @"C:\Users\agaba\Desktop\ParsedNewsCounts.txt";
 
+		/// <summary>
+		/// in default constructor creates logfile
+		/// </summary>
 		public Watcher()
 		{
 			InitializeComponent();
@@ -32,7 +35,10 @@ namespace Watcher
 			if (!EventLog.SourceExists(eventLog.Source))
 				EventLog.CreateEventSource(eventLog.Source, eventLog.Log);
 		}
-
+		
+		/// <summary>
+		/// at the start of service creates a Global memory mapped file and timer with 5 sec interval
+		/// </summary>
 		protected override void OnStart(string[] args)
 		{
 			eventLog.WriteEntry("In OnStart.");
@@ -59,12 +65,19 @@ namespace Watcher
 			timer.Start();
 		}
 
+		/// <summary>
+		/// when service is stopping, memory mepped file disposing
+		/// </summary>
 		protected override void OnStop()
 		{
 			eventLog.WriteEntry("In OnStop.");
 			mmf.Dispose();
 		}
 
+		/// <summary>
+		/// in the timer event handler, the process of obtaining paths to the parsed data from the memory mapped file, 
+		/// counting the number of elements in each of the storages and writing these quantities to the file takes place 
+		/// </summary>
 		public void OnTimer(object sender, ElapsedEventArgs args)
 		{
 			// TODO: Insert monitoring activities here.
@@ -74,8 +87,11 @@ namespace Watcher
 			List<Mutex> mutices = new List<Mutex>();
 			object locker = new object();
 
+			
 			if (Process.GetProcessesByName("vk_feed_parser").Count() != 0)
 			{
+				// Trying to getting data from memory mapped file
+				#region
 				try
 				{
 					eventLog.WriteEntry("Enter to try block", EventLogEntryType.Information, eventId);
@@ -98,7 +114,10 @@ namespace Watcher
 					eventLog.WriteEntry("Getting data from memory mapped file and deserializing block: \n" +
 						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
 				}
+				#endregion
 
+				// Trying to getting mutices from global memory space
+				#region
 				try
 				{
 					for (int i = 0; i < paths.Count; i++)
@@ -112,13 +131,17 @@ namespace Watcher
 					eventLog.WriteEntry("Getting mutices block: \n" +
 						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
 				}
+				#endregion
 
+				// Count and writing quantities to file
+				#region
 				if (File.Exists(WatcherDataPath))
 					File.Delete(WatcherDataPath);
 				for (int i = 0; i < paths.Count; i++)
 				{
 					GetCountingThread(mutices[i], paths[i], locker).Start();
 				}
+				#endregion
 			}
 		}
 
