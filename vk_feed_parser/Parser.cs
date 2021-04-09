@@ -23,6 +23,10 @@ namespace vk_feed_parser
 		public VkApi api;
 		private string nextFrom = string.Empty;
 
+		/// <summary>
+		/// login with browser
+		/// </summary>
+		/// <param name="appId">registred application ID</param>
 		public void LoginAuth(ulong appId)
 		{
 			api = new VkApi(InitDi());
@@ -39,6 +43,10 @@ namespace vk_feed_parser
 			});
 		}
 
+		/// <summary>
+		/// login with token
+		/// </summary>
+		/// <param name="token">private VK account token</param>
 		public void TokenAuthorize(string token)
 		{
 			api = new VkApi();
@@ -49,6 +57,9 @@ namespace vk_feed_parser
 			});
 		}
 
+		/// <summary>
+		/// support method for login with browser methof
+		/// </summary>
 		private static ServiceCollection InitDi()
 		{
 			var di = new ServiceCollection();
@@ -59,10 +70,10 @@ namespace vk_feed_parser
 		}
 
 		/// <summary>
-		/// Gets specified number of posts.
+		/// gets specified number of posts
 		/// </summary>
-		/// <param name="newsCount">The number of posts requested.</param>
-		/// <returns>Returns the received posts.</returns>
+		/// <param name="newsCount">the number of posts requested</param>
+		/// <returns>returns the received posts</returns>
 		public List<NewsItem> GetPostsList(uint newsCount)
 		{
 			if (newsCount == 0) return new List<NewsItem>();
@@ -88,10 +99,10 @@ namespace vk_feed_parser
 		}
 
 		/// <summary>
-		/// Gets a NewsFeed with the specified number of posts.
+		/// gets a NewsFeed with the specified number of posts
 		/// </summary>
-		/// <param name="count">The number of posts requested. Less than or equal to 100.</param>
-		/// <returns>Returns the received NewsFeed.</returns>
+		/// <param name="count">the number of posts requested. Less than or equal to 100</param>
+		/// <returns>the received NewsFeed</returns>
 		private NewsFeed GetNewsFeed(ushort count)
 		{
 			NewsFeed newsFeed = api.NewsFeed.Get(new NewsFeedGetParams()
@@ -105,7 +116,7 @@ namespace vk_feed_parser
 			return newsFeed;
 		}
 
-		//	https://github.com/vudeam - is owner of this method idea.
+		//	https://github.com/vudeam - is owner of this method idea
 		public static List<TAttType> GetAttachments<TAttType>(NewsItem post) where TAttType : class
 		{
 			if (post.Attachments != null)
@@ -120,6 +131,10 @@ namespace vk_feed_parser
 			}
 		}
 
+		/// <summary>
+		/// thread, which starts parsing process
+		/// </summary>
+		/// <returns>parsing thread</returns>
 		public Thread GetParseThread()
 		{
 			var thread = new Thread(() =>
