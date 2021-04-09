@@ -12,6 +12,8 @@ namespace vk_feed_parser
 		public static Dispatcher logDispatcher;
 		public static StackPanel logPanel;
 
+		private const int maxEntryCount = 200;
+
 		/// <param name="mDisp">dispatcher of main window</param>
 		/// <param name="panel">panel, in which will be writting messages</param>
 		public static void SetWriterParams(Dispatcher mDisp, StackPanel panel)
@@ -41,6 +43,9 @@ namespace vk_feed_parser
 				};
 				tBlock.Text += text;
 				logPanel.Children.Add(tBlock);
+
+				if (logPanel.Children.Count > maxEntryCount)
+					logPanel.Children.Remove(logPanel.Children[0]);
 
 				if (onBottom) (logPanel.Parent as ScrollViewer).ScrollToBottom();
 			});
