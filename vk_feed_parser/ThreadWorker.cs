@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using VkNet.Model;
 using System.Linq;
-using System.Collections;
 using System.IO;
-using System.Diagnostics.CodeAnalysis;
 using System.IO.MemoryMappedFiles;
 using Newtonsoft.Json;
 

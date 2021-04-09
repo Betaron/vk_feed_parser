@@ -1,20 +1,12 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using VkNet;
 using VkNet.Abstractions.Authorization;
 using VkNet.Model.RequestParams;
 using VkNet.Enums.Filters;
 using VkNet.Model;
-using VkNet.Model.Attachments;
 using System.Threading;
-using System.Windows.Threading;
-using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace vk_feed_parser
 {

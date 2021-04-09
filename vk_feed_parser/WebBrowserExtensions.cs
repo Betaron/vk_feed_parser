@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Windows.Controls;
 using CefSharp.Wpf;
 
 namespace vk_feed_parser
