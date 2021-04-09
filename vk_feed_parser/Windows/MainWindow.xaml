@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:vk_feed_parser"
         mc:Ignorable="d"
-        Title="VkFeedParser 3000" Height="300" Width="900" MinHeight="300" MinWidth="750" Loaded="Window_Loaded">
+        Title="VkFeedParser 3000" Height="300" Width="900" MinHeight="300" MinWidth="750" Loaded="Window_Loaded" Closing="Window_Closing">
 	<Window.Resources>
 		<Style x:Key="leftPanelBtn" TargetType="Button">
 			<Setter Property="FontSize" Value="16"/>

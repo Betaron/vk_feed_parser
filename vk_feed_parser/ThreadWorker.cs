@@ -11,7 +11,7 @@ namespace vk_feed_parser
 {
 	public class ThreadWorker
 	{
-		public bool IsStop = true;
+		public static bool IsStop = true;
 		Queue<NewsItem> posts;
 		static object queueLocker = new object();
 		List<Thread> packingThreads = new List<Thread>();
@@ -69,7 +69,8 @@ namespace vk_feed_parser
 			}
 			catch
 			{
-				UIWorker.AddRecord("Service is anactive..");
+				if (!IsStop)
+					UIWorker.AddRecord("Service is anactive..");
 			}
 		}
 
@@ -200,7 +201,8 @@ namespace vk_feed_parser
 			{
 				foreach (var item in p as IEnumerable<NewsItem>)
 				{
-					UIWorker.AddRecord($"{item.SourceId}_{item.PostId}");
+					if (!IsStop)
+						UIWorker.AddRecord($"{item.SourceId}_{item.PostId}");
 				}
 			}).Start(posts);
 

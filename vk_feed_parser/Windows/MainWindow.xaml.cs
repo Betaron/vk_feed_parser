@@ -10,6 +10,7 @@ namespace vk_feed_parser.Windows
 	{
 		private Parser parser = new Parser();
 		private Config config = new Config();
+		private Thread parsingThread;
 
 		public MainWindow()
 		{
@@ -89,7 +90,7 @@ namespace vk_feed_parser.Windows
 		{
 			if (parser.api.IsAuthorized)
 			{
-				Thread parsingThread = parser.GetParseThread();
+				parsingThread = parser.GetParseThread();
 				parsingThread.Start();
 				this.Dispatcher.Invoke(() =>
 				{
@@ -106,6 +107,12 @@ namespace vk_feed_parser.Windows
 					});
 				}).Start();
 			}
+		}
+
+		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			parser.ThreadsShutdown();
+			//parsingThread.Join();
 		}
 	}
 }
