@@ -86,11 +86,14 @@ namespace Watcher
 			
 			if (Process.GetProcessesByName("vk_feed_parser").Count() != 0)
 			{
+				Mutex mmfMutex = new Mutex();
 				// Trying to getting data from memory mapped file
 				#region
 				try
 				{
 					eventLog.WriteEntry("Enter to try block", EventLogEntryType.Information, eventId);
+					mmfMutex = Mutex.OpenExisting(@"Global\mmfMutex");
+					mmfMutex.WaitOne();
 					using (MemoryMappedFile mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths"))
 					{
 						using (var stream = mmf.CreateViewStream())
@@ -109,6 +112,10 @@ namespace Watcher
 				{
 					eventLog.WriteEntry("Getting data from memory mapped file and deserializing block: \n" +
 						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
+				}
+				finally
+				{
+					mmfMutex.ReleaseMutex();
 				}
 				#endregion
 

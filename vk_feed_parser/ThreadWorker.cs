@@ -17,6 +17,7 @@ namespace vk_feed_parser
 		List<Thread> packingThreads = new List<Thread>();
 		Thread savingThread;
 		MemoryMappedFile mmf;
+		Mutex mmfMutex = new Mutex(false, @"Global\mmfMutex");
 
 		// mutises for sinchronize saving and writing threads
 		static Mutex[] mutices = new Mutex[]
@@ -57,6 +58,7 @@ namespace vk_feed_parser
 		{
 			try
 			{
+				mmfMutex.WaitOne();
 				mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths");
 
 				using (var stream = mmf.CreateViewStream())
@@ -71,6 +73,10 @@ namespace vk_feed_parser
 			{
 				if (!IsStop)
 					UIWorker.AddRecord("Service is anactive..");
+			}
+			finally
+			{
+				mmfMutex.ReleaseMutex();
 			}
 		}
 
