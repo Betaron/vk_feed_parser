@@ -16,8 +16,13 @@ namespace vk_feed_parser
 		static object queueLocker = new object();
 		List<Thread> packingThreads = new List<Thread>();
 		Thread savingThread;
-		MemoryMappedFile mmf;
-		Mutex mmfMutex = new Mutex(false, @"Global\mmfMutex");
+
+		public readonly Action<Mutex> WaitOneAction = (mutex) =>
+		{
+			try { mutex.WaitOne(); }
+			catch (AbandonedMutexException)
+			{ mutex.ReleaseMutex(); mutex.WaitOne(); }
+		};
 
 		// mutises for sinchronize saving and writing threads
 		static Mutex[] mutices = new Mutex[]
@@ -30,9 +35,9 @@ namespace vk_feed_parser
 		// paths to saving separated data
 		static string[] paths = new string[]
 		{
-			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "TextData.json"),
-			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "LinksData.json"),
-			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "ImagesData.json")
+			@"D:\VkFeedParser\DataStorages\TextData.json",
+			@"D:\VkFeedParser\DataStorages\LinksData.json",
+			@"D:\VkFeedParser\DataStorages\ImagesData.json"
 		};
 
 		// methods for separating raw data
@@ -50,35 +55,6 @@ namespace vk_feed_parser
 			new List<PostData>(),
 			new List<PostData>()
 		};
-
-		/// <summary>
-		/// Constructor open the memory mapped file and write paths into it
-		/// </summary>
-		public ThreadWorker()
-		{
-			try
-			{
-				mmfMutex.WaitOne();
-				mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths");
-
-				using (var stream = mmf.CreateViewStream())
-				{
-					BinaryWriter writer = new BinaryWriter(stream);
-					writer.Write(new string(' ', 5000));
-					stream.Seek(0, SeekOrigin.Begin);
-					writer.Write(JsonConvert.SerializeObject(paths));
-				}
-			}
-			catch
-			{
-				if (!IsStop)
-					UIWorker.AddRecord("Service is anactive..");
-			}
-			finally
-			{
-				mmfMutex.ReleaseMutex();
-			}
-		}
 
 		/// <summary>
 		/// method creating a thread, which packing raw data to ready to save json format
@@ -106,7 +82,7 @@ namespace vk_feed_parser
 				}
 				while (localPosts.Count != 0 && !IsStop)
 				{
-					mutex.WaitOne();
+					WaitOneAction(mutex);
 					{
 						for (int i = 0; i < range; i++)
 							if (localPosts.Count != 0)
@@ -140,7 +116,7 @@ namespace vk_feed_parser
 				{
 					for (int targetIndex = 0; targetIndex < mutices.Length; targetIndex++)
 					{
-						mutices[targetIndex].WaitOne();
+						WaitOneAction(mutices[targetIndex]);
 						{
 							UniteAndSaveData(dataStorages[targetIndex], paths[targetIndex]);
 							dataStorages[targetIndex].Clear();
