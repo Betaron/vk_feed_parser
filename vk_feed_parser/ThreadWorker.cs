@@ -25,6 +25,11 @@ namespace vk_feed_parser
 		public static EventWaitHandle process_service = 
 			new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\Service");
 
+		public static EventWaitHandle parseStateOn =
+			new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\StateOn");
+		public static EventWaitHandle parseStateOff =
+			new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\StateOff");
+
 		public static readonly Action<Mutex> WaitOneAction = (mutex) =>
 		{
 			try { mutex.WaitOne(); }

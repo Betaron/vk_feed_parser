@@ -19,12 +19,19 @@ namespace Watcher
 		private int eventId = 1;
 
 		private Thread taskWorkerThread;
+		private Thread stateOnThread;
+		private Thread stateOffThread;
 		private bool exitFlag = false;
 		private EventWaitHandleSecurity eventWaitHandlerSecurity = new EventWaitHandleSecurity();
 
+		private static object isParseLocker = new object();
+		private static bool isParsing = false;
 
 		private static EventWaitHandle process_program;
 		private static EventWaitHandle process_service;
+
+		private static EventWaitHandle parseStateOn;
+		private static EventWaitHandle parseStateOff;
 
 		private static Timer timer = new Timer() { Interval = 5000 };
 
@@ -75,16 +82,20 @@ namespace Watcher
 				(new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
 				EventWaitHandleRights.Synchronize | EventWaitHandleRights.Modify, AccessControlType.Allow));
 
-			process_program = new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\Program", 
-				out _, eventWaitHandlerSecurity);
-
-			process_service = new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\Service",
-				out _, eventWaitHandlerSecurity);
+			process_program = assignValForEWH("Program");
+			process_service = assignValForEWH("Service");
+			parseStateOn = assignValForEWH("StateOn");
+			parseStateOff = assignValForEWH("StateOff");
 
 			timer.Elapsed += OnTimer;
 
+			stateOnThread = GetCheckStateThread(parseStateOn, true);
+			stateOffThread = GetCheckStateThread(parseStateOff, false);
+
 			taskWorkerThread = new Thread(() =>
 			{
+				stateOnThread.Start();
+				stateOffThread.Start();
 				while (!exitFlag)
 				{
 					process_service.Reset();
@@ -112,7 +123,11 @@ namespace Watcher
 
 			process_service.Set();
 			process_program.Set();
+			parseStateOn.Set();
+			parseStateOff.Set();
 
+			stateOnThread.Join();
+			stateOffThread.Join();
 			taskWorkerThread.Join();
 			
 			eventLog.WriteEntry("Service is closed.");
@@ -181,10 +196,11 @@ namespace Watcher
 
 		private static void OnTimer(object sender, ElapsedEventArgs e) 
 		{
-			
-			if (Process.GetProcessesByName("vk_feed_parser").Count() == 0)
-				process_service.Set();
-			//timer.Stop();
+			lock (isParseLocker)
+			{
+				if (Process.GetProcessesByName("vk_feed_parser").Count() == 0 || !isParsing)
+					process_service.Set();
+			}
 		}
 
 		public static void createFullPath(string path)
@@ -196,6 +212,26 @@ namespace Watcher
 					createFullPath(parentDir.ToString());
 				Directory.CreateDirectory(path);
 			}
+		}
+
+		private EventWaitHandle assignValForEWH(string name) => 
+			new EventWaitHandle(false, EventResetMode.ManualReset, $@"Global\{name}",
+				out _, eventWaitHandlerSecurity);
+
+		private Thread GetCheckStateThread(EventWaitHandle handle, bool state)
+		{
+			return new Thread(() =>
+			{
+				while (!exitFlag)
+				{
+					handle.WaitOne();
+					lock (isParseLocker)
+					{
+						isParsing = state;
+					}
+					handle.Reset();
+				}
+			});
 		}
 	}
 }

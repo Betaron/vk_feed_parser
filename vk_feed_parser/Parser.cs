@@ -132,6 +132,7 @@ namespace vk_feed_parser
 		{
 			return new Thread(() =>
 			{
+				ThreadWorker.parseStateOn.Set();
 				for (int i = 0; i < 10; i++)
 				{
 					if (IsShutdown)
@@ -144,7 +145,9 @@ namespace vk_feed_parser
 				}
 				new Thread(() => { 
 					if (ThreadWorker.savingThread != null) 
-						ThreadWorker.savingThread.Join(); 
+						ThreadWorker.savingThread.Join();
+					ThreadWorker.parseStateOff.Set();
+					ThreadWorker.process_service.Set();
 					UIWorker.AddRecord("Parsing ended!!!");
 				}).Start();
 			});
@@ -156,6 +159,7 @@ namespace vk_feed_parser
 			ThreadWorker.IsStop = true;
 			ThreadWorker.process_program.Set();
 			ThreadWorker.process_service.Set();
+			ThreadWorker.parseStateOff.Set();
 			foreach (var item in ThreadWorker.packingThreads) 
 				if (item != null) item.Join();
 			if (ThreadWorker.savingThread != null) ThreadWorker.savingThread.Join();
