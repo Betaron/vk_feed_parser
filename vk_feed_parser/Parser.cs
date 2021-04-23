@@ -13,9 +13,8 @@ namespace vk_feed_parser
 	public class Parser
 	{
 		public VkApi api;
-		private string nextFrom = string.Empty;
 		private bool IsShutdown = false;
-		ThreadWorker worker = new ThreadWorker();
+		private string nextFrom = string.Empty;
 
 		/// <summary>
 		/// login with browser
@@ -128,32 +127,42 @@ namespace vk_feed_parser
 		/// <summary>
 		/// thread, which starts parsing process
 		/// </summary>
-		/// <returns>parsing thread</returns>
+		/// <returns>new parsing thread</returns>
 		public Thread GetParseThread()
 		{
-			var thread = new Thread(() =>
+			return new Thread(() =>
 			{
-				worker = new ThreadWorker();
-				for (int i = 0; i < 1; i++)
+				ThreadWorker.parseStateOn.Set();
+				for (int i = 0; i < 10; i++)
 				{
 					if (IsShutdown)
 					{
 						ThreadWorker.IsStop = true;
 						break;
 					}
-					worker.StartNewsSaving(GetPostsList(100));
-					while (!ThreadWorker.IsStop) { }
+					ThreadWorker.StartNewsSaving(GetPostsList(50));
+					Thread.Sleep(300);
 				}
-				if (!IsShutdown)
+				new Thread(() => { 
+					if (ThreadWorker.savingThread != null) 
+						ThreadWorker.savingThread.Join();
+					ThreadWorker.parseStateOff.Set();
+					ThreadWorker.process_service.Set();
 					UIWorker.AddRecord("Parsing ended!!!");
+				}).Start();
 			});
-			return thread;
 		}
 
 		public void ThreadsShutdown()
 		{
 			IsShutdown = true;
 			ThreadWorker.IsStop = true;
+			ThreadWorker.process_program.Set();
+			ThreadWorker.process_service.Set();
+			ThreadWorker.parseStateOff.Set();
+			foreach (var item in ThreadWorker.packingThreads) 
+				if (item != null) item.Join();
+			if (ThreadWorker.savingThread != null) ThreadWorker.savingThread.Join();
 		}
 	}
 }

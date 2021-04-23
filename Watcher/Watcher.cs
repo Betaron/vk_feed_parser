@@ -10,14 +10,53 @@ using System.ServiceProcess;
 using System.Threading;
 using System.Timers;
 using Newtonsoft.Json;
+using Timer = System.Timers.Timer;
 
 namespace Watcher
 {
 	public partial class Watcher : ServiceBase
 	{
 		private int eventId = 1;
-		private MemoryMappedFile mmf;
-		private readonly string WatcherDataPath = @"C:\Users\agaba\Desktop\ParsedNewsCounts.txt";
+
+		private Thread taskWorkerThread;
+		private Thread stateOnThread;
+		private Thread stateOffThread;
+		private bool exitFlag = false;
+		private EventWaitHandleSecurity eventWaitHandlerSecurity = new EventWaitHandleSecurity();
+
+		private static object isParseLocker = new object();
+		private static bool isParsing = false;
+
+		private static EventWaitHandle process_program;
+		private static EventWaitHandle process_service;
+
+		private static EventWaitHandle parseStateOn;
+		private static EventWaitHandle parseStateOff;
+
+		private static Timer timer = new Timer() { Interval = 5000 };
+
+
+		public static string[] filesForSaving =
+		{
+			@"D:\VkFeedParser\DataStorages\TextData.json",
+			@"D:\VkFeedParser\DataStorages\LinksData.json",
+			@"D:\VkFeedParser\DataStorages\ImagesData.json"
+		};
+		private readonly string WatcherDataPath = @"D:\VkFeedParser\ParsedNewsCounts.txt";
+
+		static Mutex[] mutices = new Mutex[]
+		{
+			new Mutex(false, @"Global\mutex0"),
+			new Mutex(false, @"Global\mutex1"),
+			new Mutex(false, @"Global\mutex2"),
+		};
+
+		public readonly Action<Mutex> WaitOneAction = (mutex) =>
+		{
+			try { mutex.WaitOne(); }
+			catch (AbandonedMutexException)
+			{ mutex.ReleaseMutex(); mutex.WaitOne(); }
+		};
 
 		/// <summary>
 		/// in default constructor creates logfile
@@ -31,7 +70,7 @@ namespace Watcher
 			if (!EventLog.SourceExists(eventLog.Source))
 				EventLog.CreateEventSource(eventLog.Source, eventLog.Log);
 		}
-		
+
 		/// <summary>
 		/// at the start of service creates a Global memory mapped file and timer with 5 sec interval
 		/// </summary>
@@ -39,26 +78,38 @@ namespace Watcher
 		{
 			eventLog.WriteEntry("In OnStart.");
 
-			var sid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
-			var ace = new AccessRule<MemoryMappedFileRights>(
-				sid,
-				MemoryMappedFileRights.FullControl,
-				AccessControlType.Allow);
-			var acl = new MemoryMappedFileSecurity();
-			acl.AddAccessRule(ace);
-			mmf = MemoryMappedFile.CreateNew(
-				"sharedPaths",
-				0x100000L,
-				MemoryMappedFileAccess.ReadWrite,
-				MemoryMappedFileOptions.None,
-				acl,
-				HandleInheritability.None);
+			eventWaitHandlerSecurity.AddAccessRule(new EventWaitHandleAccessRule
+				(new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
+				EventWaitHandleRights.Synchronize | EventWaitHandleRights.Modify, AccessControlType.Allow));
 
-			// Set up a timer that triggers every timer.Interval.
-			var timer = new System.Timers.Timer();
-			timer.Interval = 5000;
-			timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
-			timer.Start();
+			process_program = assignValForEWH("Program");
+			process_service = assignValForEWH("Service");
+			parseStateOn = assignValForEWH("StateOn");
+			parseStateOff = assignValForEWH("StateOff");
+
+			timer.Elapsed += OnTimer;
+
+			stateOnThread = GetCheckStateThread(parseStateOn, true);
+			stateOffThread = GetCheckStateThread(parseStateOff, false);
+
+			taskWorkerThread = new Thread(() =>
+			{
+				stateOnThread.Start();
+				stateOffThread.Start();
+				while (!exitFlag)
+				{
+					process_service.Reset();
+					timer.Start();
+
+					process_program.Set();
+					process_service.WaitOne();
+					if (timer.Enabled)
+						timer.Stop();
+
+					CheckFiles();
+				}
+			});
+			taskWorkerThread.Start();
 		}
 
 		/// <summary>
@@ -67,85 +118,43 @@ namespace Watcher
 		protected override void OnStop()
 		{
 			eventLog.WriteEntry("In OnStop.");
-			mmf.Dispose();
+
+			exitFlag = true;
+
+			process_service.Set();
+			process_program.Set();
+			parseStateOn.Set();
+			parseStateOff.Set();
+
+			stateOnThread.Join();
+			stateOffThread.Join();
+			taskWorkerThread.Join();
+			
+			eventLog.WriteEntry("Service is closed.");
 		}
 
 		/// <summary>
-		/// in the timer event handler, the process of obtaining paths to the parsed data from the memory mapped file, 
-		/// counting the number of elements in each of the storages and writing these quantities to the file takes place 
+		/// in the timer event handler, 
+		/// counting the number of elements in each of the storages
+		/// and writing these quantities to the file takes place 
 		/// </summary>
-		public void OnTimer(object sender, ElapsedEventArgs args)
+		public void CheckFiles()
 		{
-			// TODO: Insert monitoring activities here.
 			eventLog.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventId++);
 
-			List<string> paths = new List<string>();
-			List<Mutex> mutices = new List<Mutex>();
 			object locker = new object();
 
-			
-			if (Process.GetProcessesByName("vk_feed_parser").Count() != 0)
+			if (File.Exists(WatcherDataPath)) File.Delete(WatcherDataPath);
+
+			List<Thread> countingThreads = new List<Thread>();
+
+			for (int i = 0; i < filesForSaving.Count(); i++)
 			{
-				Mutex mmfMutex = new Mutex();
-				// Trying to getting data from memory mapped file
-				#region
-				try
-				{
-					eventLog.WriteEntry("Enter to try block", EventLogEntryType.Information, eventId);
-					mmfMutex = Mutex.OpenExisting(@"Global\mmfMutex");
-					mmfMutex.WaitOne();
-					using (MemoryMappedFile mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths"))
-					{
-						using (var stream = mmf.CreateViewStream())
-						{
-							StreamReader reader = new StreamReader(stream);
-							stream.Seek(0, SeekOrigin.Begin);
-							string ret = reader.ReadToEnd();
-							ret = ret.Trim();
-							ret = ret.Remove(0, ret.IndexOf('['));
-							paths = JsonConvert.DeserializeObject<string[]>(ret).ToList();
-							eventLog.WriteEntry("DeserializeObject succeeded", EventLogEntryType.Information, eventId);
-						}
-					}
-				}
-				catch (Exception ex)
-				{
-					eventLog.WriteEntry("Getting data from memory mapped file and deserializing block: \n" +
-						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
-				}
-				finally
-				{
-					mmfMutex.ReleaseMutex();
-				}
-				#endregion
-
-				// Trying to getting mutices from global memory space
-				#region
-				try
-				{
-					for (int i = 0; i < paths.Count; i++)
-					{
-						mutices.Add(Mutex.OpenExisting($@"Global\mutex{i}"));
-					}
-					eventLog.WriteEntry("Getting mutices succeeded", EventLogEntryType.Information, eventId);
-				}
-				catch (Exception ex)
-				{
-					eventLog.WriteEntry("Getting mutices block: \n" +
-						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
-				}
-				#endregion
-
-				// Count and writing quantities to file
-				#region
-				if (File.Exists(WatcherDataPath))
-					File.Delete(WatcherDataPath);
-				for (int i = 0; i < paths.Count; i++)
-				{
-					GetCountingThread(mutices[i], paths[i], locker).Start();
-				}
-				#endregion
+				countingThreads.Add(GetCountingThread(mutices[i], filesForSaving[i], locker));
+				countingThreads[i].Start();
 			}
+
+			foreach (var item in countingThreads) { item.Join(); }
 		}
 
 		/// <summary>
@@ -155,18 +164,23 @@ namespace Watcher
 		/// <param name="path">Path to parsed data</param>
 		/// <param name="locker">loccal locker for locking file with counts of posts</param>
 		private Thread GetCountingThread(Mutex mutex, string path, object locker) =>
-			new Thread(()=> {
+			new Thread(() =>
+			{
 				try
 				{
-					mutex.WaitOne();
+					WaitOneAction(mutex);
 					eventLog.WriteEntry($"Entering to: {path}", EventLogEntryType.Information, eventId);
 					string readedData = File.ReadAllText(path);
 					List<object> deszedPosts = JsonConvert.DeserializeObject<List<object>>(readedData);
 					int count = deszedPosts.Count;
+					if (!File.Exists(path))
+					{
+						createFullPath(Directory.GetParent(WatcherDataPath).ToString());
+						File.Create(WatcherDataPath).Close();
+					}
 					lock (locker)
 					{
-						if (File.Exists(path))
-							File.AppendAllText(WatcherDataPath, $"{path}: {count}\n");
+						File.AppendAllText(WatcherDataPath, $"{path}: {count}\n");
 					}
 				}
 				catch (Exception ex)
@@ -179,5 +193,45 @@ namespace Watcher
 					mutex.ReleaseMutex();
 				}
 			});
+
+		private static void OnTimer(object sender, ElapsedEventArgs e) 
+		{
+			lock (isParseLocker)
+			{
+				if (Process.GetProcessesByName("vk_feed_parser").Count() == 0 || !isParsing)
+					process_service.Set();
+			}
+		}
+
+		public static void createFullPath(string path)
+		{
+			if (!Directory.Exists(path))
+			{
+				var parentDir = Directory.GetParent(path);
+				if (parentDir != null)
+					createFullPath(parentDir.ToString());
+				Directory.CreateDirectory(path);
+			}
+		}
+
+		private EventWaitHandle assignValForEWH(string name) => 
+			new EventWaitHandle(false, EventResetMode.ManualReset, $@"Global\{name}",
+				out _, eventWaitHandlerSecurity);
+
+		private Thread GetCheckStateThread(EventWaitHandle handle, bool state)
+		{
+			return new Thread(() =>
+			{
+				while (!exitFlag)
+				{
+					handle.WaitOne();
+					lock (isParseLocker)
+					{
+						isParsing = state;
+					}
+					handle.Reset();
+				}
+			});
+		}
 	}
 }

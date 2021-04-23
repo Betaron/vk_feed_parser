@@ -12,6 +12,7 @@ namespace vk_feed_parser
 		/// <param name="item">Serializing object</param>
 		public static void SaveToJsonFile(string path, object item, Formatting options = Formatting.Indented)
 		{
+			createFullPath(Directory.GetParent(path).ToString());
 			File.WriteAllText(path, JsonConvert.SerializeObject(item, options));
 		}
 
@@ -24,6 +25,17 @@ namespace vk_feed_parser
 		public static TItem LoadFromJsonFile<TItem>(string path, JsonSerializerSettings settings = null)
 		{
 			return JsonConvert.DeserializeObject<TItem>(File.ReadAllText(path), settings);
+		}
+
+		public static void createFullPath(string path)
+		{
+			if (!Directory.Exists(path))
+			{
+				var parentDir = Directory.GetParent(path);
+				if (parentDir != null)
+					createFullPath(parentDir.ToString());
+				Directory.CreateDirectory(path);
+			}
 		}
 	}
 }

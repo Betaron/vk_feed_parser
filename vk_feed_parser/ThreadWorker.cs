@@ -6,18 +6,36 @@ using System.Linq;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace vk_feed_parser
 {
-	public class ThreadWorker
+	public static class ThreadWorker
 	{
 		public static bool IsStop = true;
-		Queue<NewsItem> posts;
-		static object queueLocker = new object();
-		List<Thread> packingThreads = new List<Thread>();
-		Thread savingThread;
-		MemoryMappedFile mmf;
-		Mutex mmfMutex = new Mutex(false, @"Global\mmfMutex");
+
+		private static Queue<NewsItem> posts;
+		private static EventWaitHandle stoper = new EventWaitHandle(false, EventResetMode.ManualReset);
+		private static object queueLocker = new object();
+		public static List<Thread> packingThreads = new List<Thread>();
+		public static Thread savingThread;
+
+		public static EventWaitHandle process_program = 
+			new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\Program");
+		public static EventWaitHandle process_service = 
+			new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\Service");
+
+		public static EventWaitHandle parseStateOn =
+			new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\StateOn");
+		public static EventWaitHandle parseStateOff =
+			new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\StateOff");
+
+		public static readonly Action<Mutex> WaitOneAction = (mutex) =>
+		{
+			try { mutex.WaitOne(); }
+			catch (AbandonedMutexException)
+			{ mutex.ReleaseMutex(); mutex.WaitOne(); }
+		};
 
 		// mutises for sinchronize saving and writing threads
 		static Mutex[] mutices = new Mutex[]
@@ -30,9 +48,9 @@ namespace vk_feed_parser
 		// paths to saving separated data
 		static string[] paths = new string[]
 		{
-			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "TextData.json"),
-			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "LinksData.json"),
-			Path.Combine(Directory.GetCurrentDirectory(), "DataStorages", "ImagesData.json")
+			@"D:\VkFeedParser\DataStorages\TextData.json",
+			@"D:\VkFeedParser\DataStorages\LinksData.json",
+			@"D:\VkFeedParser\DataStorages\ImagesData.json"
 		};
 
 		// methods for separating raw data
@@ -52,35 +70,6 @@ namespace vk_feed_parser
 		};
 
 		/// <summary>
-		/// Constructor open the memory mapped file and write paths into it
-		/// </summary>
-		public ThreadWorker()
-		{
-			try
-			{
-				mmfMutex.WaitOne();
-				mmf = MemoryMappedFile.OpenExisting(@"Global\sharedPaths");
-
-				using (var stream = mmf.CreateViewStream())
-				{
-					BinaryWriter writer = new BinaryWriter(stream);
-					writer.Write(new string(' ', 5000));
-					stream.Seek(0, SeekOrigin.Begin);
-					writer.Write(JsonConvert.SerializeObject(paths));
-				}
-			}
-			catch
-			{
-				if (!IsStop)
-					UIWorker.AddRecord("Service is anactive..");
-			}
-			finally
-			{
-				mmfMutex.ReleaseMutex();
-			}
-		}
-
-		/// <summary>
 		/// method creating a thread, which packing raw data to ready to save json format
 		/// </summary>
 		/// <param name="mutex">mutex for sinchronize saving and this writing threads</param>
@@ -88,7 +77,7 @@ namespace vk_feed_parser
 		/// <param name="SeparateData">func for separating data</param>
 		/// <param name="dataList">buffer storage for collecting data. This storage imagine the queue for saving into file</param>
 		/// <returns>packing thread</returns>
-		private Thread GetPackingThread(
+		private static Thread GetPackingThread(
 			Mutex mutex,
 			string path,
 			Func<NewsItem, PostData> SeparateData,
@@ -106,7 +95,7 @@ namespace vk_feed_parser
 				}
 				while (localPosts.Count != 0 && !IsStop)
 				{
-					mutex.WaitOne();
+					WaitOneAction(mutex);
 					{
 						for (int i = 0; i < range; i++)
 							if (localPosts.Count != 0)
@@ -131,23 +120,30 @@ namespace vk_feed_parser
 		/// create thread, which saving previously prepeared data to corresponding file
 		/// </summary>
 		/// <returns>saving thread</returns>
-		private Thread GetSavingThread()
+		private static Thread GetSavingThread()
 		{
 			return new Thread(() =>
 			{
 				Thread.Sleep(50);
 				while (!IsStop)
 				{
+					process_program.Reset();
+					if (Process.GetProcessesByName("Watcher").Count() == 0)
+						process_program.Set();
+
+					process_service.Set();
+					process_program.WaitOne();
+
 					for (int targetIndex = 0; targetIndex < mutices.Length; targetIndex++)
 					{
-						mutices[targetIndex].WaitOne();
+						WaitOneAction(mutices[targetIndex]);
 						{
 							UniteAndSaveData(dataStorages[targetIndex], paths[targetIndex]);
 							dataStorages[targetIndex].Clear();
 						}
 						mutices[targetIndex].ReleaseMutex();
-						if (CheckStopCondition()) StopNewsSaving();
 					}
+					if (CheckStopCondition()) StopNewsSaving();
 				}
 			})
 			{ Name = "saver.exe" };
@@ -158,7 +154,7 @@ namespace vk_feed_parser
 		/// </summary>
 		/// <param name="storage">buffer storage for collecting data. This storage imagine the queue for saving into file</param>
 		/// <param name="path">path to file, in which containing the parsed data</param>
-		private void UniteAndSaveData(List<PostData> storage, string path)
+		private static void UniteAndSaveData(List<PostData> storage, string path)
 		{
 			var bufList = new List<PostData>();
 			if (File.Exists(path))
@@ -171,7 +167,7 @@ namespace vk_feed_parser
 		/// check run condition of parsing process
 		/// </summary>
 		/// <returns>if programm is stop - true, else - false</returns>
-		private bool CheckStopCondition()
+		private static bool CheckStopCondition()
 		{
 			if (packingThreads.Count == 0)
 				return true;
@@ -187,10 +183,10 @@ namespace vk_feed_parser
 		/// starting the all packing and one saving thread
 		/// </summary>
 		/// <param name="posts">raw posts, right from vk</param>
-		public void StartNewsSaving(IEnumerable<NewsItem> posts)
+		public static void StartNewsSaving(IEnumerable<NewsItem> _posts)
 		{
 			IsStop = false;
-			this.posts = new Queue<NewsItem>(posts);
+			posts = new Queue<NewsItem>(_posts);
 
 			for (int i = 0; i < mutices.Length; i++)
 			{
@@ -203,27 +199,28 @@ namespace vk_feed_parser
 			}
 			savingThread = GetSavingThread();
 
-			new Thread((object p) =>
+			new Thread(() =>
 			{
-				foreach (var item in p as IEnumerable<NewsItem>)
+				foreach (var item in _posts)
 				{
-					if (!IsStop)
-						UIWorker.AddRecord($"{item.SourceId}_{item.PostId}");
+					UIWorker.AddRecord($"{item.SourceId}_{item.PostId}");
 				}
-			}).Start(posts);
+			}).Start();
 
 			foreach (var item in packingThreads) item.Start();
 			savingThread.Start();
+			stoper.WaitOne();
 		}
 
 		/// <summary>
 		/// Clears raw posts and array of packing threads and change run state
 		/// </summary>
-		private void StopNewsSaving()
+		private static void StopNewsSaving()
 		{
 			posts.Clear();
 			packingThreads.Clear();
 			IsStop = true;
+			stoper.Set();
 		}
 	}
 }

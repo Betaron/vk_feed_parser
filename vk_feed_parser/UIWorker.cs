@@ -29,6 +29,7 @@ namespace vk_feed_parser
 		/// <param name="text">message test</param>
 		public static void AddRecord(String text)
 		{
+			if (mainDispatcher.HasShutdownStarted) return;
 			logDispatcher.Invoke(() => {
 				bool onBottom = (logPanel.Parent as ScrollViewer).VerticalOffset == 
 				(logPanel.Parent as ScrollViewer).ScrollableHeight;

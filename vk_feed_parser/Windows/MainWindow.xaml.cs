@@ -100,19 +100,23 @@ namespace vk_feed_parser.Windows
 				new Thread(()=>
 				{
 					parsingThread.Join();
-					this.Dispatcher.Invoke(() =>
-					{
-						setPreferencesBtn.IsEnabled = true;
-						runParseBtn.IsEnabled = true;
-					});
+					if (ThreadWorker.savingThread != null)
+						ThreadWorker.savingThread.Join();
+					if (!this.Dispatcher.HasShutdownStarted)
+						this.Dispatcher.Invoke(() =>
+						{
+							setPreferencesBtn.IsEnabled = true;
+							runParseBtn.IsEnabled = true;
+						});
 				}).Start();
 			}
 		}
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
+			e.Cancel = true;
 			parser.ThreadsShutdown();
-			//parsingThread.Join();
+			e.Cancel = false;
 		}
 	}
 }
