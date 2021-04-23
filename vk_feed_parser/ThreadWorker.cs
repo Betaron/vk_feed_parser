@@ -9,15 +9,17 @@ using Newtonsoft.Json;
 
 namespace vk_feed_parser
 {
-	public class ThreadWorker
+	public static class ThreadWorker
 	{
 		public static bool IsStop = true;
-		Queue<NewsItem> posts;
-		static object queueLocker = new object();
-		List<Thread> packingThreads = new List<Thread>();
-		Thread savingThread;
 
-		public readonly Action<Mutex> WaitOneAction = (mutex) =>
+		private static Queue<NewsItem> posts;
+		private static EventWaitHandle stoper = new EventWaitHandle(false, EventResetMode.ManualReset);
+		private static object queueLocker = new object();
+		public static List<Thread> packingThreads = new List<Thread>();
+		public static Thread savingThread;
+
+		public static readonly Action<Mutex> WaitOneAction = (mutex) =>
 		{
 			try { mutex.WaitOne(); }
 			catch (AbandonedMutexException)
@@ -64,7 +66,7 @@ namespace vk_feed_parser
 		/// <param name="SeparateData">func for separating data</param>
 		/// <param name="dataList">buffer storage for collecting data. This storage imagine the queue for saving into file</param>
 		/// <returns>packing thread</returns>
-		private Thread GetPackingThread(
+		private static Thread GetPackingThread(
 			Mutex mutex,
 			string path,
 			Func<NewsItem, PostData> SeparateData,
@@ -107,7 +109,7 @@ namespace vk_feed_parser
 		/// create thread, which saving previously prepeared data to corresponding file
 		/// </summary>
 		/// <returns>saving thread</returns>
-		private Thread GetSavingThread()
+		private static Thread GetSavingThread()
 		{
 			return new Thread(() =>
 			{
@@ -134,7 +136,7 @@ namespace vk_feed_parser
 		/// </summary>
 		/// <param name="storage">buffer storage for collecting data. This storage imagine the queue for saving into file</param>
 		/// <param name="path">path to file, in which containing the parsed data</param>
-		private void UniteAndSaveData(List<PostData> storage, string path)
+		private static void UniteAndSaveData(List<PostData> storage, string path)
 		{
 			var bufList = new List<PostData>();
 			if (File.Exists(path))
@@ -147,7 +149,7 @@ namespace vk_feed_parser
 		/// check run condition of parsing process
 		/// </summary>
 		/// <returns>if programm is stop - true, else - false</returns>
-		private bool CheckStopCondition()
+		private static bool CheckStopCondition()
 		{
 			if (packingThreads.Count == 0)
 				return true;
@@ -163,10 +165,10 @@ namespace vk_feed_parser
 		/// starting the all packing and one saving thread
 		/// </summary>
 		/// <param name="posts">raw posts, right from vk</param>
-		public void StartNewsSaving(IEnumerable<NewsItem> posts)
+		public static void StartNewsSaving(IEnumerable<NewsItem> _posts)
 		{
 			IsStop = false;
-			this.posts = new Queue<NewsItem>(posts);
+			posts = new Queue<NewsItem>(_posts);
 
 			for (int i = 0; i < mutices.Length; i++)
 			{
@@ -183,23 +185,24 @@ namespace vk_feed_parser
 			{
 				foreach (var item in p as IEnumerable<NewsItem>)
 				{
-					if (!IsStop)
-						UIWorker.AddRecord($"{item.SourceId}_{item.PostId}");
+					UIWorker.AddRecord($"{item.SourceId}_{item.PostId}");
 				}
 			}).Start(posts);
 
 			foreach (var item in packingThreads) item.Start();
 			savingThread.Start();
+			stoper.WaitOne();
 		}
 
 		/// <summary>
 		/// Clears raw posts and array of packing threads and change run state
 		/// </summary>
-		private void StopNewsSaving()
+		private static void StopNewsSaving()
 		{
 			posts.Clear();
 			packingThreads.Clear();
 			IsStop = true;
+			stoper.Set();
 		}
 	}
 }

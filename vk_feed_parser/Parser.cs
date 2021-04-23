@@ -13,9 +13,8 @@ namespace vk_feed_parser
 	public class Parser
 	{
 		public VkApi api;
-		private string nextFrom = string.Empty;
 		private bool IsShutdown = false;
-		ThreadWorker worker = new ThreadWorker();
+		private string nextFrom = string.Empty;
 
 		/// <summary>
 		/// login with browser
@@ -133,7 +132,6 @@ namespace vk_feed_parser
 		{
 			var thread = new Thread(() =>
 			{
-				worker = new ThreadWorker();
 				for (int i = 0; i < 1; i++)
 				{
 					if (IsShutdown)
@@ -141,11 +139,9 @@ namespace vk_feed_parser
 						ThreadWorker.IsStop = true;
 						break;
 					}
-					worker.StartNewsSaving(GetPostsList(100));
-					while (!ThreadWorker.IsStop) { }
+					ThreadWorker.StartNewsSaving(GetPostsList(100));
 				}
-				if (!IsShutdown)
-					UIWorker.AddRecord("Parsing ended!!!");
+				UIWorker.AddRecord("Parsing ended!!!");
 			});
 			return thread;
 		}
@@ -154,6 +150,9 @@ namespace vk_feed_parser
 		{
 			IsShutdown = true;
 			ThreadWorker.IsStop = true;
+			foreach (var item in ThreadWorker.packingThreads) 
+				if (item != null) item.Join();
+			if (ThreadWorker.savingThread != null) ThreadWorker.savingThread.Join();
 		}
 	}
 }
