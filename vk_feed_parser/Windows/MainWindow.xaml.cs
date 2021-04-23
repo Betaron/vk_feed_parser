@@ -100,6 +100,8 @@ namespace vk_feed_parser.Windows
 				new Thread(()=>
 				{
 					parsingThread.Join();
+					if (ThreadWorker.savingThread != null)
+						ThreadWorker.savingThread.Join();
 					if (!this.Dispatcher.HasShutdownStarted)
 						this.Dispatcher.Invoke(() =>
 						{

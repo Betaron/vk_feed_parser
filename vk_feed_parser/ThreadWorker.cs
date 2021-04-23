@@ -124,8 +124,8 @@ namespace vk_feed_parser
 							dataStorages[targetIndex].Clear();
 						}
 						mutices[targetIndex].ReleaseMutex();
-						if (CheckStopCondition()) StopNewsSaving();
 					}
+					if (CheckStopCondition()) StopNewsSaving();
 				}
 			})
 			{ Name = "saver.exe" };
@@ -181,13 +181,13 @@ namespace vk_feed_parser
 			}
 			savingThread = GetSavingThread();
 
-			new Thread((object p) =>
+			new Thread(() =>
 			{
-				foreach (var item in p as IEnumerable<NewsItem>)
+				foreach (var item in _posts)
 				{
 					UIWorker.AddRecord($"{item.SourceId}_{item.PostId}");
 				}
-			}).Start(posts);
+			}).Start();
 
 			foreach (var item in packingThreads) item.Start();
 			savingThread.Start();

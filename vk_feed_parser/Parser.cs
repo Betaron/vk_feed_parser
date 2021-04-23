@@ -127,23 +127,27 @@ namespace vk_feed_parser
 		/// <summary>
 		/// thread, which starts parsing process
 		/// </summary>
-		/// <returns>parsing thread</returns>
+		/// <returns>new parsing thread</returns>
 		public Thread GetParseThread()
 		{
-			var thread = new Thread(() =>
+			return new Thread(() =>
 			{
-				for (int i = 0; i < 1; i++)
+				for (int i = 0; i < 10; i++)
 				{
 					if (IsShutdown)
 					{
 						ThreadWorker.IsStop = true;
 						break;
 					}
-					ThreadWorker.StartNewsSaving(GetPostsList(100));
+					ThreadWorker.StartNewsSaving(GetPostsList(50));
+					Thread.Sleep(300);
 				}
-				UIWorker.AddRecord("Parsing ended!!!");
+				new Thread(() => { 
+					if (ThreadWorker.savingThread != null) 
+						ThreadWorker.savingThread.Join(); 
+					UIWorker.AddRecord("Parsing ended!!!");
+				}).Start();
 			});
-			return thread;
 		}
 
 		public void ThreadsShutdown()
