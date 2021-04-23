@@ -4,17 +4,31 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.ServiceProcess;
 using System.Threading;
 using System.Timers;
 using Newtonsoft.Json;
+using Timer = System.Timers.Timer;
 
 namespace Watcher
 {
 	public partial class Watcher : ServiceBase
 	{
 		private int eventId = 1;
-		//private MemoryMappedFile mmf;
+
+		private Thread taskWorkerThread;
+		private bool exitFlag = false;
+		private EventWaitHandleSecurity eventWaitHandlerSecurity = new EventWaitHandleSecurity();
+
+
+		private static EventWaitHandle process_program;
+		private static EventWaitHandle process_service;
+
+		private static Timer timer = new Timer() { Interval = 5000 };
+
+
 		public static string[] filesForSaving =
 		{
 			@"D:\VkFeedParser\DataStorages\TextData.json",
@@ -57,11 +71,34 @@ namespace Watcher
 		{
 			eventLog.WriteEntry("In OnStart.");
 
-			// Set up a timer that triggers every timer.Interval.
-			var timer = new System.Timers.Timer();
-			timer.Interval = 5000;
-			timer.Elapsed += new ElapsedEventHandler(this.OnTimer);
-			timer.Start();
+			eventWaitHandlerSecurity.AddAccessRule(new EventWaitHandleAccessRule
+				(new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
+				EventWaitHandleRights.Synchronize | EventWaitHandleRights.Modify, AccessControlType.Allow));
+
+			process_program = new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\Program", 
+				out _, eventWaitHandlerSecurity);
+
+			process_service = new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\Service",
+				out _, eventWaitHandlerSecurity);
+
+			timer.Elapsed += OnTimer;
+
+			taskWorkerThread = new Thread(() =>
+			{
+				while (!exitFlag)
+				{
+					process_service.Reset();
+					timer.Start();
+
+					process_program.Set();
+					process_service.WaitOne();
+					if (timer.Enabled)
+						timer.Stop();
+
+					CheckFiles();
+				}
+			});
+			taskWorkerThread.Start();
 		}
 
 		/// <summary>
@@ -70,6 +107,15 @@ namespace Watcher
 		protected override void OnStop()
 		{
 			eventLog.WriteEntry("In OnStop.");
+
+			exitFlag = true;
+
+			process_service.Set();
+			process_program.Set();
+
+			taskWorkerThread.Join();
+			
+			eventLog.WriteEntry("Service is closed.");
 		}
 
 		/// <summary>
@@ -77,7 +123,7 @@ namespace Watcher
 		/// counting the number of elements in each of the storages
 		/// and writing these quantities to the file takes place 
 		/// </summary>
-		public void OnTimer(object sender, ElapsedEventArgs args)
+		public void CheckFiles()
 		{
 			eventLog.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventId++);
 
@@ -85,10 +131,15 @@ namespace Watcher
 
 			if (File.Exists(WatcherDataPath)) File.Delete(WatcherDataPath);
 
+			List<Thread> countingThreads = new List<Thread>();
+
 			for (int i = 0; i < filesForSaving.Count(); i++)
 			{
-				GetCountingThread(mutices[i], filesForSaving[i], locker).Start();
+				countingThreads.Add(GetCountingThread(mutices[i], filesForSaving[i], locker));
+				countingThreads[i].Start();
 			}
+
+			foreach (var item in countingThreads) { item.Join(); }
 		}
 
 		/// <summary>
@@ -127,6 +178,14 @@ namespace Watcher
 					mutex.ReleaseMutex();
 				}
 			});
+
+		private static void OnTimer(object sender, ElapsedEventArgs e) 
+		{
+			
+			if (Process.GetProcessesByName("vk_feed_parser").Count() == 0)
+				process_service.Set();
+			//timer.Stop();
+		}
 
 		public static void createFullPath(string path)
 		{

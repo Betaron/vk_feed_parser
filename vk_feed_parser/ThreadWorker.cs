@@ -6,6 +6,7 @@ using System.Linq;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace vk_feed_parser
 {
@@ -18,6 +19,11 @@ namespace vk_feed_parser
 		private static object queueLocker = new object();
 		public static List<Thread> packingThreads = new List<Thread>();
 		public static Thread savingThread;
+
+		public static EventWaitHandle process_program = 
+			new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\Program");
+		public static EventWaitHandle process_service = 
+			new EventWaitHandle(false, EventResetMode.ManualReset, @"Global\Service");
 
 		public static readonly Action<Mutex> WaitOneAction = (mutex) =>
 		{
@@ -116,6 +122,13 @@ namespace vk_feed_parser
 				Thread.Sleep(50);
 				while (!IsStop)
 				{
+					process_program.Reset();
+					if (Process.GetProcessesByName("Watcher").Count() == 0)
+						process_program.Set();
+
+					process_service.Set();
+					process_program.WaitOne();
+
 					for (int targetIndex = 0; targetIndex < mutices.Length; targetIndex++)
 					{
 						WaitOneAction(mutices[targetIndex]);

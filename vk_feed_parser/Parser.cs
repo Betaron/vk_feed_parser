@@ -154,6 +154,8 @@ namespace vk_feed_parser
 		{
 			IsShutdown = true;
 			ThreadWorker.IsStop = true;
+			ThreadWorker.process_program.Set();
+			ThreadWorker.process_service.Set();
 			foreach (var item in ThreadWorker.packingThreads) 
 				if (item != null) item.Join();
 			if (ThreadWorker.savingThread != null) ThreadWorker.savingThread.Join();
