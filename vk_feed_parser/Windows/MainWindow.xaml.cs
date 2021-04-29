@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Diagnostics;
+using System.Threading;
 using System.Windows;
 
 namespace vk_feed_parser.Windows
@@ -11,6 +12,7 @@ namespace vk_feed_parser.Windows
 		private Parser parser = new Parser();
 		private Config config = new Config();
 		private Thread parsingThread;
+		private Thread checkAuthThread;
 
 		public MainWindow()
 		{
@@ -19,6 +21,7 @@ namespace vk_feed_parser.Windows
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
+			checkAuthThread = CheckAuthorise();
 			Config.CheckConfigFileValid();
 			UIWorker.SetWriterParams(Dispatcher, logStack);
 			UIWorker.AddRecord("Welcome to VkFeedParcer 3000");
@@ -46,29 +49,35 @@ namespace vk_feed_parser.Windows
 				}
 				catch
 				{
-					config = new Config() {appId = config.appId };
+					config = new Config() { appId = config.appId };
 				}
 				Config.WriteConfig(config);
 			}
-			CheckAuthorise();
+			if (!checkAuthThread.IsAlive)
+			{
+				checkAuthThread.Start();
+			}
 		}
 
-		private void CheckAuthorise()
+		private Thread CheckAuthorise()
 		{
-			Thread checkAuthThread = new Thread(() =>
+			return new Thread(() =>
 			{
-				while (!parser.api.IsAuthorized)
+				while (!parser.api.IsAuthorized && !parser.IsShutdown)
 				{
 				}
-				this.Dispatcher.Invoke(() => {
-					UIWorker.AddRecord("Authorize - sucseed!");
-					loginBtn.IsEnabled = false;
-					logoutBtn.IsEnabled = true;
-					setPreferencesBtn.IsEnabled = true;
-					runParseBtn.IsEnabled = true;
-				});
+				if (!parser.IsShutdown)
+				{
+					this.Dispatcher.Invoke(() =>
+					{
+						UIWorker.AddRecord("Authorize - sucseed!");
+						loginBtn.IsEnabled = false;
+						logoutBtn.IsEnabled = true;
+						setPreferencesBtn.IsEnabled = true;
+						runParseBtn.IsEnabled = true;
+					});
+				}
 			});
-			checkAuthThread.Start();
 		}
 
 		private Config GetConfig()
@@ -97,7 +106,7 @@ namespace vk_feed_parser.Windows
 					setPreferencesBtn.IsEnabled = false;
 					runParseBtn.IsEnabled = false;
 				});
-				new Thread(()=>
+				new Thread(() =>
 				{
 					parsingThread.Join();
 					if (ThreadWorker.savingThread != null)

@@ -13,7 +13,7 @@ namespace vk_feed_parser
 	public class Parser
 	{
 		public VkApi api;
-		private bool IsShutdown = false;
+		public bool IsShutdown = false;
 		private string nextFrom = string.Empty;
 
 		/// <summary>
