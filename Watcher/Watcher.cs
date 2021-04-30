@@ -24,6 +24,7 @@ namespace Watcher
 		private bool exitFlag = false;
 		private EventWaitHandleSecurity eventWaitHandlerSecurity = new EventWaitHandleSecurity();
 
+		private static object fileLocker = new object();
 		private static object isParseLocker = new object();
 		private static bool isParsing = false;
 
@@ -129,7 +130,7 @@ namespace Watcher
 			stateOnThread.Join();
 			stateOffThread.Join();
 			taskWorkerThread.Join();
-			
+
 			eventLog.WriteEntry("Service is closed.");
 		}
 
@@ -142,15 +143,14 @@ namespace Watcher
 		{
 			eventLog.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventId++);
 
-			object locker = new object();
-
 			if (File.Exists(WatcherDataPath)) File.Delete(WatcherDataPath);
 
 			List<Thread> countingThreads = new List<Thread>();
+			fileLocker = new object();
 
 			for (int i = 0; i < filesForSaving.Count(); i++)
 			{
-				countingThreads.Add(GetCountingThread(mutices[i], filesForSaving[i], locker));
+				countingThreads.Add(GetCountingThread(mutices[i], filesForSaving[i], fileLocker));
 				countingThreads[i].Start();
 			}
 
@@ -166,35 +166,29 @@ namespace Watcher
 		private Thread GetCountingThread(Mutex mutex, string path, object locker) =>
 			new Thread(() =>
 			{
-				try
+				WaitOneAction(mutex);
+				eventLog.WriteEntry($"Entering to: {path}", EventLogEntryType.Information, eventId);
+
+				string readedData = string.Empty;
+				if (File.Exists(path))
+					readedData = File.ReadAllText(path);
+				List<object> deszedPosts = JsonConvert.DeserializeObject<List<object>>(readedData) ?? new List<object>();
+				int count = deszedPosts.Count;
+
+				lock (locker)
 				{
-					WaitOneAction(mutex);
-					eventLog.WriteEntry($"Entering to: {path}", EventLogEntryType.Information, eventId);
-					string readedData = File.ReadAllText(path);
-					List<object> deszedPosts = JsonConvert.DeserializeObject<List<object>>(readedData);
-					int count = deszedPosts.Count;
-					if (!File.Exists(path))
+					if (!File.Exists(WatcherDataPath))
 					{
-						createFullPath(Directory.GetParent(WatcherDataPath).ToString());
-						File.Create(WatcherDataPath).Close();
+							createFullPath(Directory.GetParent(WatcherDataPath).ToString());
+							File.Create(WatcherDataPath).Close();
 					}
-					lock (locker)
-					{
-						File.AppendAllText(WatcherDataPath, $"{path}: {count}\n");
-					}
+					File.AppendAllText(WatcherDataPath, $"{path}: {count}\n");
 				}
-				catch (Exception ex)
-				{
-					eventLog.WriteEntry("Countng and writing block: \n" +
-						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
-				}
-				finally
-				{
-					mutex.ReleaseMutex();
-				}
+
+				mutex.ReleaseMutex();
 			});
 
-		private static void OnTimer(object sender, ElapsedEventArgs e) 
+		private static void OnTimer(object sender, ElapsedEventArgs e)
 		{
 			lock (isParseLocker)
 			{
@@ -214,7 +208,7 @@ namespace Watcher
 			}
 		}
 
-		private EventWaitHandle assignValForEWH(string name) => 
+		private EventWaitHandle assignValForEWH(string name) =>
 			new EventWaitHandle(false, EventResetMode.ManualReset, $@"Global\{name}",
 				out _, eventWaitHandlerSecurity);
 
