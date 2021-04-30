@@ -140,8 +140,8 @@ namespace vk_feed_parser
 						ThreadWorker.IsStop = true;
 						break;
 					}
-					ThreadWorker.StartNewsSaving(GetPostsList(50));
-					Thread.Sleep(300);
+					ThreadWorker.StartNewsSaving(GetPostsList(10));
+					Thread.Sleep(200);
 				}
 				new Thread(() => { 
 					if (ThreadWorker.savingThread != null) 
