@@ -29,7 +29,7 @@ namespace vk_feed_parser.Windows
 
 		private void loginBtn_Click(object sender, RoutedEventArgs e)
 		{
-			config = GetConfig();
+			config.ReadConfig();
 			if (config.IsStayOnline)
 			{
 				try { parser.TokenAuthorize(config.token); }
@@ -78,12 +78,6 @@ namespace vk_feed_parser.Windows
 					});
 				}
 			});
-		}
-
-		private Config GetConfig()
-		{
-			config.ReadConfig();
-			return config;
 		}
 
 		private void logoutBtn_Click(object sender, RoutedEventArgs e)
