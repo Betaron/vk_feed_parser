@@ -4,9 +4,9 @@ namespace vk_feed_parser
 {
 	public class Config
 	{
-		public ulong appId { get; set; }
-		public string token { get; set; }
-		public bool IsStayOnline { get; set; }
+		public ulong appId;
+		public string token;
+		public bool IsStayOnline;
 
 		public void SetConfig(Config externalConfig)
 		{
@@ -21,20 +21,25 @@ namespace vk_feed_parser
 		public static void CheckConfigFileValid()
 		{
 			string path = Path.Combine(Directory.GetCurrentDirectory(), "config.json");
-			try { Config externalConfig = FileWorker.LoadFromJsonFile<Config>(path); }
-			catch {	WriteConfig(new Config()); }
+			if (!File.Exists(path))
+				WriteConfig(new Config());
+			else if (FileWorker.LoadFromJsonFile<Config>(path).Equals(null))
+				WriteConfig(new Config());
 		}
 
 		public void ReadConfig()
 		{
 			string path = Path.Combine(Directory.GetCurrentDirectory(), "config.json");
 
-			try
+			if (File.Exists(path))
 			{
 				Config externalConfig = FileWorker.LoadFromJsonFile<Config>(path);
-				SetConfig(externalConfig);
+
+				if (!externalConfig.Equals(null))
+					SetConfig(externalConfig);
+				else
+					WriteConfig(new Config());
 			}
-			catch { WriteConfig(new Config()); }
 		}
 	}
 }
