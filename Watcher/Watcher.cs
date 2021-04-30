@@ -22,7 +22,8 @@ namespace Watcher
 		private Thread stateOnThread;
 		private Thread stateOffThread;
 		private bool exitFlag = false;
-		private EventWaitHandleSecurity eventWaitHandlerSecurity = new EventWaitHandleSecurity();
+		private static EventWaitHandleSecurity eventWaitHandlerSecurity = new EventWaitHandleSecurity();
+		private static MutexSecurity mutexSecurity = new MutexSecurity();
 
 		private static object fileLocker = new object();
 		private static object isParseLocker = new object();
@@ -45,12 +46,7 @@ namespace Watcher
 		};
 		private readonly string WatcherDataPath = @"D:\VkFeedParser\ParsedNewsCounts.txt";
 
-		static Mutex[] mutices = new Mutex[]
-		{
-			new Mutex(false, @"Global\mutex0"),
-			new Mutex(false, @"Global\mutex1"),
-			new Mutex(false, @"Global\mutex2"),
-		};
+		static Mutex[] mutices;
 
 		public readonly Action<Mutex> WaitOneAction = (mutex) =>
 		{
@@ -80,13 +76,24 @@ namespace Watcher
 			eventLog.WriteEntry("In OnStart.");
 
 			eventWaitHandlerSecurity.AddAccessRule(new EventWaitHandleAccessRule
-				(new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
-				EventWaitHandleRights.Synchronize | EventWaitHandleRights.Modify, AccessControlType.Allow));
+				(new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+				EventWaitHandleRights.FullControl, AccessControlType.Allow));
+
+			mutexSecurity.AddAccessRule(new MutexAccessRule
+				(new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+				MutexRights.FullControl, AccessControlType.Allow));
 
 			process_program = assignValForEWH("Program");
 			process_service = assignValForEWH("Service");
 			parseStateOn = assignValForEWH("StateOn");
 			parseStateOff = assignValForEWH("StateOff");
+
+			mutices = new Mutex[]
+			{
+				assignValForMutex("mutex0"),
+				assignValForMutex("mutex1"),
+				assignValForMutex("mutex2")
+			};
 
 			timer.Elapsed += OnTimer;
 
@@ -179,8 +186,8 @@ namespace Watcher
 				{
 					if (!File.Exists(WatcherDataPath))
 					{
-							createFullPath(Directory.GetParent(WatcherDataPath).ToString());
-							File.Create(WatcherDataPath).Close();
+						createFullPath(Directory.GetParent(WatcherDataPath).ToString());
+						File.Create(WatcherDataPath).Close();
 					}
 					File.AppendAllText(WatcherDataPath, $"{path}: {count}\n");
 				}
@@ -208,9 +215,12 @@ namespace Watcher
 			}
 		}
 
-		private EventWaitHandle assignValForEWH(string name) =>
+		private static EventWaitHandle assignValForEWH(string name) =>
 			new EventWaitHandle(false, EventResetMode.ManualReset, $@"Global\{name}",
 				out _, eventWaitHandlerSecurity);
+
+		private static Mutex assignValForMutex(string name) =>
+			new Mutex(false, $@"Global\{name}", out _, mutexSecurity);
 
 		private Thread GetCheckStateThread(EventWaitHandle handle, bool state)
 		{
