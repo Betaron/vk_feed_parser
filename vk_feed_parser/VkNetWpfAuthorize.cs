@@ -52,7 +52,7 @@ namespace vk_feed_parser
 
 			dlg.ShowDialog();
 
-			return Task.FromResult(dlg.Auth);
+			return Task.FromResult(dlg.Auth ?? new AuthorizationResult());
 		}
 
 		public void SetAuthorizationParams(IApiAuthParams authorizationParams)
