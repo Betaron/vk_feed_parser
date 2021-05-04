@@ -174,10 +174,10 @@ namespace Watcher
 				WaitOneAction(mutex);
 				eventLog.WriteEntry($"Entering to: {path}", EventLogEntryType.Information, eventId);
 
-				string readedData = string.Empty;
+				string readData = string.Empty;
 				if (File.Exists(path))
-					readedData = File.ReadAllText(path);
-				List<object> deszedPosts = JsonConvert.DeserializeObject<List<object>>(readedData) ?? new List<object>();
+					readData = File.ReadAllText(path);
+				List<object> deszedPosts = JsonConvert.DeserializeObject<List<object>>(readData) ?? new List<object>();
 				int count = deszedPosts.Count;
 
 				lock (locker)

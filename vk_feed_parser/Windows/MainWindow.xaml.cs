@@ -70,7 +70,7 @@ namespace vk_feed_parser.Windows
 				{
 					this.Dispatcher.Invoke(() =>
 					{
-						UIWorker.AddRecord("Authorize - sucseed!");
+						UIWorker.AddRecord("Authorize - sucseeded!");
 						loginBtn.IsEnabled = false;
 						logoutBtn.IsEnabled = true;
 						setPreferencesBtn.IsEnabled = true;
