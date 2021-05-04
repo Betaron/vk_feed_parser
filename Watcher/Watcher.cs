@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -26,7 +25,6 @@ namespace Watcher
 		private static MutexSecurity mutexSecurity = new MutexSecurity();
 
 		private static object fileLocker = new object();
-		private static object isParseLocker = new object();
 		private static bool isParsing = false;
 
 		private static EventWaitHandle process_program;
@@ -111,10 +109,10 @@ namespace Watcher
 
 					process_program.Set();
 					process_service.WaitOne();
-					if (timer.Enabled)
-						timer.Stop();
-
-					CheckFiles();
+					
+					timer.Stop();
+					if (!exitFlag)
+						CheckFiles();
 				}
 			});
 			taskWorkerThread.Start();
@@ -197,11 +195,8 @@ namespace Watcher
 
 		private static void OnTimer(object sender, ElapsedEventArgs e)
 		{
-			lock (isParseLocker)
-			{
-				if (Process.GetProcessesByName("vk_feed_parser").Count() == 0 || !isParsing)
-					process_service.Set();
-			}
+			if (Process.GetProcessesByName("vk_feed_parser").Count() == 0 || !isParsing)
+				process_service.Set();
 		}
 
 		public static void createFullPath(string path)
@@ -229,10 +224,7 @@ namespace Watcher
 				while (!exitFlag)
 				{
 					handle.WaitOne();
-					lock (isParseLocker)
-					{
-						isParsing = state;
-					}
+					isParsing = state;
 					handle.Reset();
 				}
 			});
