@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -22,9 +21,10 @@ namespace Watcher
 		private Thread stateOnThread;
 		private Thread stateOffThread;
 		private bool exitFlag = false;
-		private EventWaitHandleSecurity eventWaitHandlerSecurity = new EventWaitHandleSecurity();
+		private static EventWaitHandleSecurity eventWaitHandlerSecurity = new EventWaitHandleSecurity();
+		private static MutexSecurity mutexSecurity = new MutexSecurity();
 
-		private static object isParseLocker = new object();
+		private static object fileLocker = new object();
 		private static bool isParsing = false;
 
 		private static EventWaitHandle process_program;
@@ -44,12 +44,7 @@ namespace Watcher
 		};
 		private readonly string WatcherDataPath = @"D:\VkFeedParser\ParsedNewsCounts.txt";
 
-		static Mutex[] mutices = new Mutex[]
-		{
-			new Mutex(false, @"Global\mutex0"),
-			new Mutex(false, @"Global\mutex1"),
-			new Mutex(false, @"Global\mutex2"),
-		};
+		static Mutex[] mutices;
 
 		public readonly Action<Mutex> WaitOneAction = (mutex) =>
 		{
@@ -79,13 +74,24 @@ namespace Watcher
 			eventLog.WriteEntry("In OnStart.");
 
 			eventWaitHandlerSecurity.AddAccessRule(new EventWaitHandleAccessRule
-				(new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
-				EventWaitHandleRights.Synchronize | EventWaitHandleRights.Modify, AccessControlType.Allow));
+				(new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+				EventWaitHandleRights.FullControl, AccessControlType.Allow));
+
+			mutexSecurity.AddAccessRule(new MutexAccessRule
+				(new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+				MutexRights.FullControl, AccessControlType.Allow));
 
 			process_program = assignValForEWH("Program");
 			process_service = assignValForEWH("Service");
 			parseStateOn = assignValForEWH("StateOn");
 			parseStateOff = assignValForEWH("StateOff");
+
+			mutices = new Mutex[]
+			{
+				assignValForMutex("mutex0"),
+				assignValForMutex("mutex1"),
+				assignValForMutex("mutex2")
+			};
 
 			timer.Elapsed += OnTimer;
 
@@ -103,10 +109,10 @@ namespace Watcher
 
 					process_program.Set();
 					process_service.WaitOne();
-					if (timer.Enabled)
-						timer.Stop();
-
-					CheckFiles();
+					
+					timer.Stop();
+					if (!exitFlag)
+						CheckFiles();
 				}
 			});
 			taskWorkerThread.Start();
@@ -129,7 +135,7 @@ namespace Watcher
 			stateOnThread.Join();
 			stateOffThread.Join();
 			taskWorkerThread.Join();
-			
+
 			eventLog.WriteEntry("Service is closed.");
 		}
 
@@ -142,15 +148,14 @@ namespace Watcher
 		{
 			eventLog.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventId++);
 
-			object locker = new object();
-
 			if (File.Exists(WatcherDataPath)) File.Delete(WatcherDataPath);
 
 			List<Thread> countingThreads = new List<Thread>();
+			fileLocker = new object();
 
 			for (int i = 0; i < filesForSaving.Count(); i++)
 			{
-				countingThreads.Add(GetCountingThread(mutices[i], filesForSaving[i], locker));
+				countingThreads.Add(GetCountingThread(mutices[i], filesForSaving[i], fileLocker));
 				countingThreads[i].Start();
 			}
 
@@ -166,41 +171,32 @@ namespace Watcher
 		private Thread GetCountingThread(Mutex mutex, string path, object locker) =>
 			new Thread(() =>
 			{
-				try
+				WaitOneAction(mutex);
+				eventLog.WriteEntry($"Entering to: {path}", EventLogEntryType.Information, eventId);
+
+				string readData = string.Empty;
+				if (File.Exists(path))
+					readData = File.ReadAllText(path);
+				List<object> deszedPosts = JsonConvert.DeserializeObject<List<object>>(readData) ?? new List<object>();
+				int count = deszedPosts.Count;
+
+				lock (locker)
 				{
-					WaitOneAction(mutex);
-					eventLog.WriteEntry($"Entering to: {path}", EventLogEntryType.Information, eventId);
-					string readedData = File.ReadAllText(path);
-					List<object> deszedPosts = JsonConvert.DeserializeObject<List<object>>(readedData);
-					int count = deszedPosts.Count;
-					if (!File.Exists(path))
+					if (!File.Exists(WatcherDataPath))
 					{
 						createFullPath(Directory.GetParent(WatcherDataPath).ToString());
 						File.Create(WatcherDataPath).Close();
 					}
-					lock (locker)
-					{
-						File.AppendAllText(WatcherDataPath, $"{path}: {count}\n");
-					}
+					File.AppendAllText(WatcherDataPath, $"{path}: {count}\n");
 				}
-				catch (Exception ex)
-				{
-					eventLog.WriteEntry("Countng and writing block: \n" +
-						"Exception: " + ex.Message, EventLogEntryType.Error, eventId);
-				}
-				finally
-				{
-					mutex.ReleaseMutex();
-				}
+
+				mutex.ReleaseMutex();
 			});
 
-		private static void OnTimer(object sender, ElapsedEventArgs e) 
+		private static void OnTimer(object sender, ElapsedEventArgs e)
 		{
-			lock (isParseLocker)
-			{
-				if (Process.GetProcessesByName("vk_feed_parser").Count() == 0 || !isParsing)
-					process_service.Set();
-			}
+			if (Process.GetProcessesByName("vk_feed_parser").Count() == 0 || !isParsing)
+				process_service.Set();
 		}
 
 		public static void createFullPath(string path)
@@ -214,9 +210,12 @@ namespace Watcher
 			}
 		}
 
-		private EventWaitHandle assignValForEWH(string name) => 
+		private static EventWaitHandle assignValForEWH(string name) =>
 			new EventWaitHandle(false, EventResetMode.ManualReset, $@"Global\{name}",
 				out _, eventWaitHandlerSecurity);
+
+		private static Mutex assignValForMutex(string name) =>
+			new Mutex(false, $@"Global\{name}", out _, mutexSecurity);
 
 		private Thread GetCheckStateThread(EventWaitHandle handle, bool state)
 		{
@@ -225,10 +224,7 @@ namespace Watcher
 				while (!exitFlag)
 				{
 					handle.WaitOne();
-					lock (isParseLocker)
-					{
-						isParsing = state;
-					}
+					isParsing = state;
 					handle.Reset();
 				}
 			});
